@@ -1,0 +1,2 @@
+sinetstream
+sinetstream-kafka
