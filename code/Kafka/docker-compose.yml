@@ -39,8 +39,8 @@ services:
       PCAP_MAX_PACKET_COUNT: ${MAX_PACKET_COUNT}
     volumes:
       - type: volume
-        source: pcap-capture
+        source: pcap-data
         target: /pcap
 volumes:
-  pcap-capture:
+  pcap-data:
     external: true
