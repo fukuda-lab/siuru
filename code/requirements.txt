@@ -1,4 +1,9 @@
 pandas
 pytest
 black
+
+# Scapy + optional dependencies
 --pre scapy[basic]
+matplotlib
+pyx
+cryptography
