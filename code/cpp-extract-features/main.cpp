@@ -5,7 +5,8 @@
 
 #include "sniffex.c"
 
-auto& USAGE_STR = "Usage: ./pcap-feature-extraction [--test] [--file </path/to/file>]\n";
+auto& USAGE_STR = "Usage: ./pcap-feature-extraction [--test] [--test-file </path/to/file>]"
+                  "[--stream </path/to/file>]\n";
 auto& TCP_PROTO = "tcp";
 
 int test_pcap() {
@@ -74,12 +75,15 @@ void packet_to_features(u_char *args, const struct pcap_pkthdr *header, const u_
     const char *dst_host = inet_ntoa(ip->ip_dst);
     const uint16_t src_port = ntohs(tcp->th_sport);
     const uint16_t dst_port = ntohs(tcp->th_dport);
-
     printf("%s %s %d %d %s {", src_host, dst_host, src_port, dst_port, TCP_PROTO);
 
     // TODO calculate and print features.
-
-    printf("}\n");
+    // Timestamp.
+    printf("'ts': %ld, ", header->ts.tv_sec*1000000L + header->ts.tv_usec);
+    // IP packet length.
+    printf("'ip_len': %hu, ", ip->ip_len);
+    // TCP segment length.
+    printf("'tcp_len': %d}\n", ip->ip_len - ip->ip_off);
   }
 }
 
