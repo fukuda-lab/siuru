@@ -6,6 +6,7 @@
 #include "sniffex.c"
 
 auto& USAGE_STR = "Usage: ./pcap-feature-extraction [--test] [--file </path/to/file>]\n";
+auto& TCP_PROTO = "tcp";
 
 int test_pcap() {
   char errbuf[PCAP_ERRBUF_SIZE];
@@ -59,6 +60,41 @@ int test_file(const char* path) {
   return (0);
 }
 
+void packet_to_features(u_char *args, const struct pcap_pkthdr *header, const u_char *packet) {
+  const struct sniff_ip *ip;
+  const struct sniff_tcp *tcp;
+  ip = (struct sniff_ip*)(packet + SIZE_ETHERNET);
+
+  if (ip->ip_p == IPPROTO_TCP) {
+    tcp = (struct sniff_tcp *)(packet + SIZE_ETHERNET + IP_HL(ip) * 4);
+
+    // TODO input validation and error catching.
+
+    const char *src_host = inet_ntoa(ip->ip_src);
+    const char *dst_host = inet_ntoa(ip->ip_dst);
+    const uint16_t src_port = ntohs(tcp->th_sport);
+    const uint16_t dst_port = ntohs(tcp->th_dport);
+
+    printf("%s %s %d %d %s {", src_host, dst_host, src_port, dst_port, TCP_PROTO);
+
+    // TODO calculate and print features.
+
+    printf("}\n");
+  }
+}
+
+int stream_file(const char* path) {
+  char errbuf[PCAP_ERRBUF_SIZE];
+  pcap_t *handle;
+  handle = pcap_open_offline(path, errbuf);
+  if (handle == nullptr) {
+    fprintf(stderr, "Couldn't open pcap file at %s: %s\n", path, errbuf);
+    return (2);
+  }
+  pcap_loop(handle, -1, packet_to_features, nullptr);
+  return (0);
+}
+
 int main(int argc, char *argv[]) {
   if (argc == 1) {
     std::cout << USAGE_STR;
@@ -68,13 +104,21 @@ int main(int argc, char *argv[]) {
     if (strcmp(argv[i], "--test") == 0) {
       test_pcap();
     }
-    if (strcmp(argv[i], "--file") == 0) {
+    if (strcmp(argv[i], "--test-file") == 0) {
       if (i == argc - 1) {
         std::cout << USAGE_STR;
         exit (1);
       }
       i++;
       test_file(argv[i]);
+    }
+    if (strcmp(argv[i], "--stream") == 0) {
+      if (i == argc - 1) {
+        std::cout << USAGE_STR;
+        exit (1);
+      }
+      i++;
+      stream_file(argv[i]);
     }
   }
 }
