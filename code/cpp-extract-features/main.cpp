@@ -3,6 +3,8 @@
 #include <iostream>
 #include <pcap.h>
 
+#include "sniffex.c"
+
 auto& USAGE_STR = "Usage: ./pcap-feature-extraction [--test] [--file </path/to/file>]\n";
 
 int test_pcap() {
@@ -34,13 +36,13 @@ int test_pcap() {
   packet = pcap_next(handle, &header);
   printf("Got a packet with length of [%d]\n", header.len);
   if (header.len != 0) {
-    printf("%s\n", packet);
+    print_hex_ascii_line(packet, header.len, 0);
   }
   pcap_close(handle);
   return (0);
 }
 
-int read_from_file(const char* path) {
+int test_file(const char* path) {
   char errbuf[PCAP_ERRBUF_SIZE];
   pcap_t *handle;
   const u_char *packet;
@@ -50,17 +52,18 @@ int read_from_file(const char* path) {
     fprintf(stderr, "Couldn't open pcap file at %s: %s\n", path, errbuf);
     return (2);
   }
-
   packet = pcap_next(handle, &header);
-  printf("Got a packet with length of [%d]\n", header.len);
-  if (header.len != 0) {
-    printf("%s\n", packet);
-  }
+  // Use the function from sniffex to print packet data.
+  got_packet(nullptr, &header, packet);
   pcap_close(handle);
   return (0);
 }
 
 int main(int argc, char *argv[]) {
+  if (argc == 1) {
+    std::cout << USAGE_STR;
+    return 0;
+  }
   for (auto i = 0; i < argc; i++) {
     if (strcmp(argv[i], "--test") == 0) {
       test_pcap();
@@ -71,7 +74,7 @@ int main(int argc, char *argv[]) {
         exit (1);
       }
       i++;
-      read_from_file(argv[i]);
+      test_file(argv[i]);
     }
   }
 }
