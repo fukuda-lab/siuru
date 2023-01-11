@@ -79,11 +79,11 @@ void packet_to_features(u_char *args, const struct pcap_pkthdr *header, const u_
 
     // TODO calculate and print features.
     // Timestamp.
-    printf("'ts': %ld, ", header->ts.tv_sec*1000000L + header->ts.tv_usec);
+    printf("\"ts\": %ld, ", header->ts.tv_sec*1000000L + header->ts.tv_usec);
     // IP packet length.
-    printf("'ip_len': %hu, ", ip->ip_len);
+    printf("\"ip_len\": %hu, ", ip->ip_len);
     // TCP segment length.
-    printf("'tcp_len': %d}\n", ip->ip_len - ip->ip_off);
+    printf("\"tcp_len\": %d}\n", ip->ip_len - ip->ip_off);
   }
 }
 
