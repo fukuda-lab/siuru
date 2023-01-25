@@ -36,18 +36,19 @@ def get_message():
     return stdin.readline().rstrip("\r\n")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = ArgumentParser(description="SINETStream Producer")
-    parser.add_argument(
-        "-s", "--service", metavar="SERVICE_NAME", required=False)
-    parser.add_argument(
-        "-c", "--config", metavar="CONFIG_NAME", required=False)
+    parser.add_argument("-s", "--service", metavar="SERVICE_NAME", required=False)
+    parser.add_argument("-c", "--config", metavar="CONFIG_NAME", required=False)
     args = parser.parse_args()
 
     kwargs = {}
     if args.config is None:
         if args.service is None:
-            print("ERROR: -s/--service must be specified if -c/--config is not specified.", file=stderr)
+            print(
+                "ERROR: -s/--service must be specified if -c/--config is not specified.",
+                file=stderr,
+            )
             exit(1)
     else:
         kwargs["config"] = args.config
