@@ -7,3 +7,6 @@ black
 matplotlib
 pyx
 cryptography
+
+# C++ dependency manager
+conan
