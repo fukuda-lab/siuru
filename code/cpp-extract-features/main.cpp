@@ -18,10 +18,11 @@ auto& USAGE_STR = "Usage: ./pcap-feature-extraction [function]\n\n"
                   "  test-devices           List available devices\n"
                   "  test-file <abspath>    Open file and read one packet\n";
 
+
+/**
+ * List available network devices.
+ */
 int test_pcap() {
-  /**
-   * Lists available network devices.
-   */
   auto& devs = pcpp::PcapLiveDeviceList::getInstance().getPcapLiveDevicesList();
   std::cout << "Available devices:" << std::endl;
   for (auto& dev : devs) {
@@ -30,12 +31,13 @@ int test_pcap() {
   return (0);
 }
 
+
+/**
+ * Opens a PCAP file and tries to parse the first packet as IPv4 packet.
+ *
+ * @param path Absolute path to the PCAP file to open.
+ */
 int test_file(const char* path) {
-  /**
-   * Opens a PCAP file and tries to parse the first packet as IPv4 packet.
-   *
-   * @param path Absolute path to the PCAP file to open.
-   */
   pcpp::PcapFileReaderDevice reader(path);
   if (!reader.open())
   {
@@ -66,16 +68,16 @@ int test_file(const char* path) {
   return 0;
 }
 
+/**
+ * Prints data extracted from the packet in format:
+ * <src_ip> <dst_ip> <src_port> <dst_port> <protocol> <JSON features>\n
+ *
+ * JSON features:
+ *    ts - packet receipt timestamp in nanoseconds
+ *    ip_len - IP packet length
+ *    tcp_len - TCP segment length
+ */
 void packet_to_features(pcpp::RawPacket* rawPacket, pcpp::PcapLiveDevice* dev, void*) {
-  /**
-   * Prints data extracted from the packet in format:
-   * <src_ip> <dst_ip> <src_port> <dst_port> <protocol> <JSON features>\n
-   *
-   * JSON features:
-   *    ts - packet receipt timestamp in nanoseconds
-   *    ip_len - IP packet length
-   *    tcp_len - TCP segment length
-   */
   pcpp::Packet packet(rawPacket);
   auto* ip_layer = packet.getLayerOfType<pcpp::IPv4Layer>();
   if (ip_layer == nullptr) {
@@ -137,7 +139,6 @@ int stream_device(const std::string& device_name) {
     std::cerr << e.what() << std::endl;
   }
   return 0;
-}
 
 int main(int argc, char *argv[]) {
   if (argc == 1) {
