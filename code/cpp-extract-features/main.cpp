@@ -1,21 +1,41 @@
+#include <EthLayer.h>
+#include <TcpLayer.h>
 #include <cstdio>
 #include <cstring>
 #include <iostream>
 
-#include "PcapPlusPlus/Common++/header/IpAddress.h"
-#include "PcapPlusPlus/Pcap++/header/PcapFileDevice.h"
-#include "PcapPlusPlus/Packet++/header/IPv4Layer.h"
-#include "PcapPlusPlus/Packet++/header/Packet.h"
-#include "PcapPlusPlus/Packet++/header/RawPacket.h"
+#include "IPv4Layer.h"
+#include "IpAddress.h"
+#include "Packet.h"
+#include "PcapFileDevice.h"
+#include "PcapLiveDeviceList.h"
+#include "RawPacket.h"
 
-auto& USAGE_STR = "Usage: ./pcap-feature-extraction";
+auto& USAGE_STR = "Usage: ./pcap-feature-extraction [function]\n\n"
+                  "Functions:\n"
+                  "  stream-file <abspath>  Output feature stream from file\n"
+                  "  stream-device <name>   Output feature stream from device\n"
+                  "  test-devices           List available devices\n"
+                  "  test-file <abspath>    Open file and read one packet\n";
 
 int test_pcap() {
+  /**
+   * Lists available network devices.
+   */
+  auto& devs = pcpp::PcapLiveDeviceList::getInstance().getPcapLiveDevicesList();
+  std::cout << "Available devices:" << std::endl;
+  for (auto& dev : devs) {
+    std::cout << " - " << dev->getName() << std::endl;
+  }
   return (0);
 }
 
 int test_file(const char* path) {
-  // open a pcap file for reading
+  /**
+   * Opens a PCAP file and tries to parse the first packet as IPv4 packet.
+   *
+   * @param path Absolute path to the PCAP file to open.
+   */
   pcpp::PcapFileReaderDevice reader(path);
   if (!reader.open())
   {
@@ -23,7 +43,6 @@ int test_file(const char* path) {
     return 1;
   }
 
-  // read the first packet from the file
   pcpp::RawPacket rawPacket;
   if (!reader.getNextPacket(rawPacket))
   {
@@ -31,68 +50,93 @@ int test_file(const char* path) {
     return 1;
   }
 
-  // parse the raw packet into a parsed packet
   pcpp::Packet parsedPacket(&rawPacket);
 
-  // verify the packet is IPv4
   if (parsedPacket.isPacketOfType(pcpp::IPv4)) {
-    // extract source and dest IPs
     pcpp::IPv4Address srcIP = parsedPacket.getLayerOfType<pcpp::IPv4Layer>()->getSrcIPv4Address();
     pcpp::IPv4Address destIP = parsedPacket.getLayerOfType<pcpp::IPv4Layer>()->getDstIPv4Address();
 
-    // print source and dest IPs
     std::cout << "Source IP is '" << srcIP << "'; Dest IP is '" << destIP << "'" << std::endl;
   }
   else {
     std::cout << "Not an IPv4 packet" << std::endl;
   }
 
-  // close the file
   reader.close();
-
   return 0;
-
-
-  return (0);
 }
 
-void packet_to_features(u_char *args, const struct pcap_pkthdr *header, const u_char *packet) {
-//  const struct sniff_ip *ip;
-//  const struct sniff_tcp *tcp;
-//  ip = (struct sniff_ip*)(packet + SIZE_ETHERNET);
-//
-//  if (ip->ip_p == IPPROTO_TCP) {
-//    tcp = (struct sniff_tcp *)(packet + SIZE_ETHERNET + IP_HL(ip) * 4);
-//
-//    // TODO input validation and error catching.
-//
-//    const char *src_host = inet_ntoa(ip->ip_src);
-//    const char *dst_host = inet_ntoa(ip->ip_dst);
-//    const uint16_t src_port = ntohs(tcp->th_sport);
-//    const uint16_t dst_port = ntohs(tcp->th_dport);
-//    auto& TCP_PROTO = "tcp";
-//    printf("%s %s %d %d %s {", src_host, dst_host, src_port, dst_port, TCP_PROTO);
-//
-//    // TODO calculate and print features.
-//    // Timestamp.
-//    printf("\"ts\": %ld, ", header->ts.tv_sec*1000000L + header->ts.tv_usec);
-//    // IP packet length.
-//    printf("\"ip_len\": %hu, ", ip->ip_len);
-//    // TCP segment length.
-//    printf("\"tcp_len\": %d}\n", ip->ip_len - ip->ip_off);
-//  }
+void packet_to_features(pcpp::RawPacket* rawPacket, pcpp::PcapLiveDevice* dev, void*) {
+  /**
+   * Prints data extracted from the packet in format:
+   * <src_ip> <dst_ip> <src_port> <dst_port> <protocol> <JSON features>\n
+   *
+   * JSON features:
+   *    ts - packet receipt timestamp in nanoseconds
+   *    ip_len - IP packet length
+   *    tcp_len - TCP segment length
+   */
+  pcpp::Packet packet(rawPacket);
+  auto* ip_layer = packet.getLayerOfType<pcpp::IPv4Layer>();
+  if (ip_layer == nullptr) {
+    return;
+  }
+
+  auto* tcp_layer = packet.getLayerOfType<pcpp::TcpLayer>();
+  if (tcp_layer == nullptr) {
+    return;
+  }
+
+  auto src_ip = ip_layer->getSrcIPv4Address().toString();
+  auto dst_ip = ip_layer->getDstIPv4Address().toString();
+  auto src_port = tcp_layer->getSrcPort();
+  auto dst_port = tcp_layer->getDstPort();
+  auto& TCP_PROTO = "tcp";
+  printf("%s %s %d %d %s {", src_ip.c_str(), dst_ip.c_str(), src_port, dst_port, TCP_PROTO);
+  // Timestamp in nanoseconds.
+  printf("\"ts\": %ld, ", rawPacket->getPacketTimeStamp().tv_sec*1000000000L + rawPacket->getPacketTimeStamp().tv_nsec);
+  // IP packet length.
+  printf("\"ip_len\": %zu, ", ip_layer->getHeaderLen());
+  // TCP segment length.
+  printf("\"tcp_len\": %zu}\n", tcp_layer->getHeaderLen());
 }
 
 int stream_file(const char* path) {
-//  char errbuf[PCAP_ERRBUF_SIZE];
-//  pcap_t *handle;
-//  handle = pcap_open_offline(path, errbuf);
-//  if (handle == nullptr) {
-//    fprintf(stderr, "Couldn't open pcap file at %s: %s\n", path, errbuf);
-//    return (2);
-//  }
-//  pcap_loop(handle, -1, packet_to_features, nullptr);
-  return (0);
+  pcpp::PcapFileReaderDevice reader(path);
+  if (!reader.open())
+  {
+    fprintf(stderr, "Couldn't open pcap file at %s\n", path);
+    return 1;
+  }
+  pcpp::RawPacket rawPacket;
+  bool hasNext = reader.getNextPacket(rawPacket);
+  while (hasNext) {
+    packet_to_features(&rawPacket, nullptr, nullptr);
+    hasNext = reader.getNextPacket(rawPacket);
+  }
+  return 0;
+}
+
+int stream_device(const std::string& device_name) {
+  pcpp::PcapLiveDevice* dev = pcpp::PcapLiveDeviceList::getInstance().getPcapLiveDeviceByName(device_name);
+  if (dev == nullptr) {
+    std::cerr << "Cannot find interface [" << device_name << "]" << std::endl;
+    return 1;
+  }
+
+  if (!dev->open())
+  {
+    std::cerr << "Cannot open device" << std::endl;
+    return 1;
+  }
+
+  try {
+    dev->startCapture(packet_to_features, nullptr);
+  }
+  catch (std::exception& e) {
+    std::cerr << e.what() << std::endl;
+  }
+  return 0;
 }
 
 int main(int argc, char *argv[]) {
@@ -101,24 +145,37 @@ int main(int argc, char *argv[]) {
     return 0;
   }
   for (auto i = 0; i < argc; i++) {
-    if (strcmp(argv[i], "--test") == 0) {
-      test_pcap();
-    }
-    if (strcmp(argv[i], "--test-file") == 0) {
-      if (i == argc - 1) {
-        std::cout << USAGE_STR;
-        exit (1);
-      }
-      i++;
-      test_file(argv[i]);
-    }
-    if (strcmp(argv[i], "--stream") == 0) {
+    if (strcmp(argv[i], "stream-file") == 0) {
       if (i == argc - 1) {
         std::cout << USAGE_STR;
         exit (1);
       }
       i++;
       stream_file(argv[i]);
+      exit(0);
     }
+    if (strcmp(argv[i], "stream-device") == 0) {
+      if (i == argc - 1) {
+        std::cout << USAGE_STR;
+        exit (1);
+      }
+      i++;
+      stream_device(argv[i]);
+      exit(0);
+    }
+    if (strcmp(argv[i], "test-devices") == 0) {
+      test_pcap();
+      exit(0);
+    }
+    if (strcmp(argv[i], "test-file") == 0) {
+      if (i == argc - 1) {
+        std::cout << USAGE_STR;
+        exit (1);
+      }
+      i++;
+      test_file(argv[i]);
+      exit(0);
+    }
+
   }
 }
