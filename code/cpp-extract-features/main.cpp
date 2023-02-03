@@ -1,4 +1,5 @@
 #include <EthLayer.h>
+#include <SystemUtils.h>
 #include <TcpLayer.h>
 #include <cstdio>
 #include <cstring>
@@ -73,11 +74,13 @@ int test_file(const char* path) {
  * <src_ip> <dst_ip> <src_port> <dst_port> <protocol> <JSON features>\n
  *
  * JSON features:
- *    ts - packet receipt timestamp in nanoseconds
+ *    ts - packet receipt timestamp in milliseconds
  *    ip_len - IP packet length
  *    tcp_len - TCP segment length
+ *    tcp_flags - 0 or 1 for [CWR, ECE, URG, ACK, PSH, RST, SYN, FIN]
  */
-void packet_to_features(pcpp::RawPacket* rawPacket, pcpp::PcapLiveDevice* dev, void*) {
+static void packet_to_features(pcpp::RawPacket* rawPacket, pcpp::PcapLiveDevice* dev, void* cookie) {
+  std::cout << "Packet received" << std::endl;
   pcpp::Packet packet(rawPacket);
   auto* ip_layer = packet.getLayerOfType<pcpp::IPv4Layer>();
   if (ip_layer == nullptr) {
@@ -119,12 +122,18 @@ void packet_to_features(pcpp::RawPacket* rawPacket, pcpp::PcapLiveDevice* dev, v
 
 }
 
-int stream_file(const char* path) {
+
+/**
+ * Stream a PCAP file and output packet features to stdout.
+ *
+ * @param path Absolute path to the PCAP file.
+ */
+void stream_file(const char* path) {
   pcpp::PcapFileReaderDevice reader(path);
   if (!reader.open())
   {
     fprintf(stderr, "Couldn't open pcap file at %s\n", path);
-    return 1;
+    return;
   }
   pcpp::RawPacket rawPacket;
   bool hasNext = reader.getNextPacket(rawPacket);
@@ -132,29 +141,38 @@ int stream_file(const char* path) {
     packet_to_features(&rawPacket, nullptr, nullptr);
     hasNext = reader.getNextPacket(rawPacket);
   }
-  return 0;
 }
 
-int stream_device(const std::string& device_name) {
+
+/**
+ * Stream packets from a network device.
+ * TODO add packet filter as argument
+ *
+ * @param device_name
+ */
+void stream_device(const std::string& device_name) {
   pcpp::PcapLiveDevice* dev = pcpp::PcapLiveDeviceList::getInstance().getPcapLiveDeviceByName(device_name);
   if (dev == nullptr) {
     std::cerr << "Cannot find interface [" << device_name << "]" << std::endl;
-    return 1;
+    return;
   }
+  std::cout << "Found interface [" << device_name << "]" << std::endl;
 
   if (!dev->open())
   {
     std::cerr << "Cannot open device" << std::endl;
-    return 1;
+    return;
   }
+  std::cout << "Opened device [" << device_name << "]" << std::endl;
 
   try {
     dev->startCapture(packet_to_features, nullptr);
+    pcpp::multiPlatformSleep(10);
   }
   catch (std::exception& e) {
     std::cerr << e.what() << std::endl;
   }
-  return 0;
+  dev->stopCapture();
 }
 
 int main(int argc, char *argv[]) {
