@@ -93,14 +93,30 @@ void packet_to_features(pcpp::RawPacket* rawPacket, pcpp::PcapLiveDevice* dev, v
   auto dst_ip = ip_layer->getDstIPv4Address().toString();
   auto src_port = tcp_layer->getSrcPort();
   auto dst_port = tcp_layer->getDstPort();
+
+  auto flag_cwr = tcp_layer->getTcpHeader()->cwrFlag;
+  auto flag_ece = tcp_layer->getTcpHeader()->eceFlag;
+  auto flag_urg = tcp_layer->getTcpHeader()->urgFlag;
+  auto flag_ack = tcp_layer->getTcpHeader()->ackFlag;
+  auto flag_psh = tcp_layer->getTcpHeader()->pshFlag;
+  auto flag_rst = tcp_layer->getTcpHeader()->rstFlag;
+  auto flag_syn = tcp_layer->getTcpHeader()->synFlag;
+  auto flag_fin = tcp_layer->getTcpHeader()->finFlag;
+
   auto& TCP_PROTO = "tcp";
   printf("%s %s %d %d %s {", src_ip.c_str(), dst_ip.c_str(), src_port, dst_port, TCP_PROTO);
-  // Timestamp in nanoseconds.
-  printf("\"ts\": %ld, ", rawPacket->getPacketTimeStamp().tv_sec*1000000000L + rawPacket->getPacketTimeStamp().tv_nsec);
+  // Timestamp (received in nanoseconds, forwarded in milliseconds).
+  auto ts_ns = rawPacket->getPacketTimeStamp().tv_sec*1000000000L + rawPacket->getPacketTimeStamp().tv_nsec;
+  printf("\"ts\": %ld, ", ts_ns / 1000);
   // IP packet length.
   printf("\"ip_len\": %zu, ", ip_layer->getHeaderLen());
+  // TCP flags.
+  printf("\"tcp_flags\": [%hu, %hu, %hu, %hu, %hu, %hu, %hu, %hu], ",
+         flag_cwr, flag_ece, flag_urg, flag_ack,
+         flag_psh, flag_rst, flag_syn, flag_fin);
   // TCP segment length.
   printf("\"tcp_len\": %zu}\n", tcp_layer->getHeaderLen());
+
 }
 
 int stream_file(const char* path) {
@@ -139,6 +155,7 @@ int stream_device(const std::string& device_name) {
     std::cerr << e.what() << std::endl;
   }
   return 0;
+}
 
 int main(int argc, char *argv[]) {
   if (argc == 1) {
