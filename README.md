@@ -31,3 +31,10 @@ Installed dependencies:
 ```bash
 libpcap0.8 libpcap0.8-dev libpcap0.8-dbg
 ```
+
+## Sample: load and process features
+
+```bash
+cd cmake-build-debug
+./pcap-feature-extraction stream-file /path/to/data/MQTTset/Data/PCAP/capture_flood.pcap | python ../code/IoT-AD.py -s
+```
