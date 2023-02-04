@@ -1,6 +1,7 @@
 pandas
 pytest
 black
+scikit-learn
 
 # Scapy + optional dependencies
 --pre scapy[basic]
