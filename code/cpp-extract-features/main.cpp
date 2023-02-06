@@ -80,7 +80,6 @@ int test_file(const char* path) {
  *    tcp_flags - 0 or 1 for [CWR, ECE, URG, ACK, PSH, RST, SYN, FIN]
  */
 static void packet_to_features(pcpp::RawPacket* rawPacket, pcpp::PcapLiveDevice* dev, void* cookie) {
-  std::cout << "Packet received" << std::endl;
   pcpp::Packet packet(rawPacket);
   auto* ip_layer = packet.getLayerOfType<pcpp::IPv4Layer>();
   if (ip_layer == nullptr) {
