@@ -1,4 +1,5 @@
 import argparse
+import subprocess
 import sys
 
 import encode_features
@@ -19,9 +20,9 @@ def main():
     parser = argparse.ArgumentParser()
 
     # Input options.
+    parser.add_argument("-p", "--preprocessor", type=str, required=True)
     parser.add_argument("-f", "--file", type=str, required=False)
-    parser.add_argument("-s", "--stdin", action="store_true")
-    parser.add_argument("-p", "--pipe", type=str, required=False)
+    parser.add_argument("-d", "--device", type=str, required=False)
 
     # Feature selection options.
     # TODO Add feature selection when you have a lot of free time...
@@ -48,23 +49,21 @@ def main():
     processed_feature_generator = None
     # Pass input for processing.
     if args.file:
-        log.info(f"Reading from file: {args.file}")
-        raise NotImplementedError("TODO: Implement file input to feature processor.")
-    elif args.stdin:
-        log.info(f"Processing features from stdin.")
-        processed_feature_generator = preprocess_features.preprocess((line for line in sys.stdin))
-    elif args.pipe:
-        raise NotImplementedError("TODO: Implement file input to feature processor.")
-
-    # Pick encoding -- there is only one for now.
+        log.info(f"Processing features from file.")
+        pcap_call = [args.preprocessor, "stream-file", args.file]
+        process = subprocess.Popen(pcap_call, stdout=subprocess.PIPE, universal_newlines=True)
+        processed_feature_generator = preprocess_features.preprocess((line for line in process.stdout.readlines()))
+    elif args.device:
+        raise NotImplementedError("TODO: Implement network device input to feature processor.")
     assert processed_feature_generator
 
+    # Pick encoding -- there is only one for now.
     log.info("Encoding features.")
     encoded_feature_generator = encode_features.default_encoding(processed_feature_generator)
 
     if args.count:
         count = 0
-        for elem in encoded_feature_generator:
+        for _ in encoded_feature_generator:
             count += 1
         log.info(f"Counted {count} data points.")
 
