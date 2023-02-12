@@ -64,7 +64,7 @@ def main():
 
     # Label generators (or sources) -- hardcoded for now.
     all_labels = {
-        "MQTTset/Data/PCAP/capture_flood.pcap": lambda length: [1 for _ in length]
+        "MQTTset/Data/PCAP/capture_flood.pcap": [1 for _ in range(613)]
     }
     if args.file:
         # Extract relative path to dataset. Assumes there is no subdirectory named "data"!
@@ -87,12 +87,12 @@ def main():
         for _ in encoded_feature_generator:
             count += 1
         log.info(f"Counted {count} data points.")
+        return
 
     # Start models and reporting.
     if args.train:
         if args.random_forest:
-            pass
-            # models.random_forest.train(encoded_feature_generator)
+            models.random_forest.train(encoded_feature_generator, dataset_labels)
         if args.autoencoder:
             pass
     else:  # TODO Run classifier in a separate thread.
