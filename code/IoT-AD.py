@@ -1,4 +1,5 @@
 import argparse
+import os
 import subprocess
 import sys
 
@@ -60,6 +61,26 @@ def main():
     # Pick encoding -- there is only one for now.
     log.info("Encoding features.")
     encoded_feature_generator = encode_features.default_encoding(processed_feature_generator)
+
+    # Label generators (or sources) -- hardcoded for now.
+    all_labels = {
+        "MQTTset/Data/PCAP/capture_flood.pcap": lambda length: [1 for _ in length]
+    }
+    if args.file:
+        # Extract relative path to dataset. Assumes there is no subdirectory named "data"!
+        path_components = args.file.split(os.path.sep)
+        try:
+            data_dir_idx = len(path_components) - path_components[::-1].index("data") - 1
+        except ValueError:
+            log.error(f"Path {args.file} is not under the data directory!")
+            return
+        relative_data_path = os.path.join(*path_components[data_dir_idx+1:])
+        if relative_data_path not in all_labels:
+            log.error(f"Labels not defined for {relative_data_path}")
+            return
+        dataset_labels = all_labels[relative_data_path]
+    else:
+        dataset_labels = None
 
     if args.count:
         count = 0
