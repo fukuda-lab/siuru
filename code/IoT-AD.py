@@ -1,10 +1,12 @@
 import argparse
+import itertools
 import os
 import subprocess
 import sys
 
 import encode_features
 import models.random_forest
+from dataloaders.MQTTsetLoader import MQTTsetLoader
 from pipeline_logger import PipelineLogger
 import preprocess_features
 
@@ -22,7 +24,7 @@ def main():
 
     # Input options.
     parser.add_argument("-p", "--preprocessor", type=str, required=True)
-    parser.add_argument("-f", "--file", type=str, required=False)
+    parser.add_argument("-f", "--files", type=str, required=False, nargs="+")
     parser.add_argument("-d", "--device", type=str, required=False)
 
     # Feature selection options.
@@ -47,52 +49,53 @@ def main():
     log.debug("Parsing arguments.")
     args = parser.parse_args()
 
-    processed_feature_generator = None
+    available_dataloaders = [MQTTsetLoader]
+
+    feature_generators = []
+    label_generators = []
+
     # Pass input for processing.
-    if args.file:
-        log.info(f"Processing features from file.")
-        pcap_call = [args.preprocessor, "stream-file", args.file]
-        process = subprocess.Popen(pcap_call, stdout=subprocess.PIPE, universal_newlines=True)
-        processed_feature_generator = preprocess_features.preprocess((line for line in process.stdout.readlines()))
+    if args.files:
+        for file in args.files:
+            # Find a suitable dataloader.
+            dataloader_kwargs = {
+                "filepath": file,
+                "preprocessor_path": args.preprocessor
+            }
+            loadable = False
+            for loader in available_dataloaders:
+                if loader.can_load(file):
+                    log.info(f"Adding {loader.__name__} to pipeline for input file: {file}")
+                    loader_inst = loader()
+                    feature_generators.append(loader_inst.preprocess(**dataloader_kwargs))
+                    label_generators.append(loader_inst.get_labels(**dataloader_kwargs))
+                    loadable = True
+                    break
+            if not loadable:
+                log.error(f"No data preprocessor available for file: {file}")
+                return
+
     elif args.device:
         raise NotImplementedError("TODO: Implement network device input to feature processor.")
-    assert processed_feature_generator
+
+    processed_feature_generator = itertools.chain.from_iterable(feature_generators)
+    label_generator = itertools.chain.from_iterable(label_generators)
+
+    if args.count:
+        count = 0
+        for _ in processed_feature_generator:
+            count += 1
+        log.info(f"Counted {count} data points.")
+        return
 
     # Pick encoding -- there is only one for now.
     log.info("Encoding features.")
     encoded_feature_generator = encode_features.default_encoding(processed_feature_generator)
 
-    # Label generators (or sources) -- hardcoded for now.
-    all_labels = {
-        "MQTTset/Data/PCAP/capture_flood.pcap": [1 for _ in range(613)]
-    }
-    if args.file:
-        # Extract relative path to dataset. Assumes there is no subdirectory named "data"!
-        path_components = args.file.split(os.path.sep)
-        try:
-            data_dir_idx = len(path_components) - path_components[::-1].index("data") - 1
-        except ValueError:
-            log.error(f"Path {args.file} is not under the data directory!")
-            return
-        relative_data_path = os.path.join(*path_components[data_dir_idx+1:])
-        if relative_data_path not in all_labels:
-            log.error(f"Labels not defined for {relative_data_path}")
-            return
-        dataset_labels = all_labels[relative_data_path]
-    else:
-        dataset_labels = None
-
-    if args.count:
-        count = 0
-        for _ in encoded_feature_generator:
-            count += 1
-        log.info(f"Counted {count} data points.")
-        return
-
     # Start models and reporting.
     if args.train:
         if args.random_forest:
-            models.random_forest.train(encoded_feature_generator, dataset_labels)
+            models.random_forest.train(encoded_feature_generator, label_generator)
         if args.autoencoder:
             pass
     else:  # TODO Run classifier in a separate thread.
