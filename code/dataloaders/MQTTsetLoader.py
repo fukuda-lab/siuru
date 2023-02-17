@@ -31,28 +31,6 @@ class MQTTsetLoader(IDataLoader):
     def can_load(filepath: str) -> bool:
         return IDataLoader._get_path_relative_to_data_dir(filepath) in MQTTsetLoader.SUPPORTED_FILES
 
-    @staticmethod
-    def feature_signature() -> List[Union[PacketFeature, HostFeature, OpenFlowFeature]]:
-        return [
-            PacketFeature.IP_PACKET_SIZE,
-            PacketFeature.TCP_CWR_FLAG,
-            PacketFeature.TCP_ECE_FLAG,
-            PacketFeature.TCP_URG_FLAG,
-            PacketFeature.TCP_ACK_FLAG,
-            PacketFeature.TCP_PSH_FLAG,
-            PacketFeature.TCP_RST_FLAG,
-            PacketFeature.TCP_SYN_FLAG,
-            PacketFeature.TCP_FIN_FLAG,
-
-            HostFeature.RECEIVED_PACKET_COUNT,
-            HostFeature.SUM_RECEIVED_PACKET_SIZE,
-            HostFeature.AVG_RECEIVED_PACKET_SIZE,
-
-            OpenFlowFeature.RECEIVED_PACKET_COUNT,
-            OpenFlowFeature.SUM_PACKET_SIZE,
-            OpenFlowFeature.AVG_PACKET_SIZE
-        ]
-
     def preprocess(self, **kwargs) -> Generator[
             Dict[Union[PacketFeature, HostFeature, HostFeature], Any], None, None]:
 
@@ -160,6 +138,28 @@ class MQTTsetLoader(IDataLoader):
             }
 
         log.info(f"[MQTTsetLoader] Extracted and processed {overall_packet_counter} packets.")
+
+    @staticmethod
+    def feature_signature() -> List[Union[PacketFeature, HostFeature, OpenFlowFeature]]:
+        return [
+            PacketFeature.IP_PACKET_SIZE,
+            PacketFeature.TCP_CWR_FLAG,
+            PacketFeature.TCP_ECE_FLAG,
+            PacketFeature.TCP_URG_FLAG,
+            PacketFeature.TCP_ACK_FLAG,
+            PacketFeature.TCP_PSH_FLAG,
+            PacketFeature.TCP_RST_FLAG,
+            PacketFeature.TCP_SYN_FLAG,
+            PacketFeature.TCP_FIN_FLAG,
+
+            HostFeature.RECEIVED_PACKET_COUNT,
+            HostFeature.SUM_RECEIVED_PACKET_SIZE,
+            HostFeature.AVG_RECEIVED_PACKET_SIZE,
+
+            OpenFlowFeature.RECEIVED_PACKET_COUNT,
+            OpenFlowFeature.SUM_PACKET_SIZE,
+            OpenFlowFeature.AVG_PACKET_SIZE
+        ]
 
     def get_labels(self, **kwargs) -> Generator[Any, None, None]:
         assert kwargs["filepath"]

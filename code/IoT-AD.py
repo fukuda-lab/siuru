@@ -53,6 +53,8 @@ def main():
 
     feature_generators = []
     label_generators = []
+    # TODO determine feature list as union from different data loaders, not just first signature.
+    feature_list = []
 
     # Pass input for processing.
     if args.files:
@@ -69,6 +71,8 @@ def main():
                     loader_inst = loader()
                     feature_generators.append(loader_inst.preprocess(**dataloader_kwargs))
                     label_generators.append(loader_inst.get_labels(**dataloader_kwargs))
+                    if not feature_list:
+                        feature_list = loader_inst.feature_signature()
                     loadable = True
                     break
             if not loadable:
@@ -95,7 +99,10 @@ def main():
     # Start models and reporting.
     if args.train:
         if args.random_forest:
-            models.random_forest.train(encoded_feature_generator, label_generator)
+            models.random_forest.train(
+                encoded_feature_generator,
+                label_generator,
+                feature_names=[str(f) for f in feature_list])
         if args.autoencoder:
             pass
     else:  # TODO Run classifier in a separate thread.
