@@ -1,6 +1,8 @@
 import logging
-from typing import Generator, Any, Optional, List
+import os.path
+from typing import Generator, Any, Optional, List, Dict
 import numpy as np
+from joblib import dump, load
 
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import f1_score, precision_score, recall_score, confusion_matrix, accuracy_score
@@ -34,3 +36,15 @@ def train(features: Generator[np.array, None, None],
         log.debug("Feature importances:")
         for idx, name in enumerate(feature_names):
             log.debug(f"{name : <40} {rfc.feature_importances_[idx]:6.4f}")
+
+    if path_to_store:
+        dump(rfc, path_to_store)
+
+
+class RF:
+    def __init__(self, path_to_model: str):
+        self.model = load(path_to_model)
+        self.name = os.path.splitext(os.path.basename(path_to_model))[0]
+
+    def predict(self, X):
+        return self.model.predict(X)
