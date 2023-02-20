@@ -5,7 +5,7 @@ from typing import List, Union, Generator, Dict, Any, Tuple
 import pandas as pd
 
 from dataloaders.IDataLoader import IDataLoader
-from preprocess_features import PacketFeature, HostFeature, OpenFlowFeature, PacketData
+from preprocess_features import PacketFeature, HostFeature, FlowFeature, PacketData
 
 from pipeline_logger import PipelineLogger
 
@@ -128,19 +128,19 @@ class MQTTsetLoader(IDataLoader):
                 # HostFeature.AVG_INTER_ARRIVAL_TIME: host_avg_inter_arrival_time,
                 # HostFeature.CONNECTION_DURATION: host_connection_duration,
 
-                OpenFlowFeature.RECEIVED_PACKET_COUNT: packet_count_by_flow[p.flow_identifier],
-                OpenFlowFeature.SUM_PACKET_SIZE: packet_size_sum_by_flow[p.flow_identifier],
-                OpenFlowFeature.AVG_PACKET_SIZE: packet_size_sum_by_flow[p.flow_identifier] / packet_count_by_flow[
+                FlowFeature.RECEIVED_PACKET_COUNT: packet_count_by_flow[p.flow_identifier],
+                FlowFeature.SUM_PACKET_SIZE: packet_size_sum_by_flow[p.flow_identifier],
+                FlowFeature.AVG_PACKET_SIZE: packet_size_sum_by_flow[p.flow_identifier] / packet_count_by_flow[
                     p.flow_identifier],
-                # OpenFlowFeature.LAST_INTER_ARRIVAL_TIME: flow_last_inter_arrival_time,
-                # OpenFlowFeature.AVG_INTER_ARRIVAL_TIME: flow_avg_inter_arrival_time,
-                # OpenFlowFeature.CONNECTION_DURATION: flow_connection_duration,
+                # FlowFeature.LAST_INTER_ARRIVAL_TIME: flow_last_inter_arrival_time,
+                # FlowFeature.AVG_INTER_ARRIVAL_TIME: flow_avg_inter_arrival_time,
+                # FlowFeature.CONNECTION_DURATION: flow_connection_duration,
             }
 
         log.info(f"[MQTTsetLoader] Extracted and processed {overall_packet_counter} packets.")
 
     @staticmethod
-    def feature_signature() -> List[Union[PacketFeature, HostFeature, OpenFlowFeature]]:
+    def feature_signature() -> List[Union[PacketFeature, HostFeature, FlowFeature]]:
         return [
             PacketFeature.IP_PACKET_SIZE,
             PacketFeature.TCP_CWR_FLAG,
@@ -156,9 +156,9 @@ class MQTTsetLoader(IDataLoader):
             HostFeature.SUM_RECEIVED_PACKET_SIZE,
             HostFeature.AVG_RECEIVED_PACKET_SIZE,
 
-            OpenFlowFeature.RECEIVED_PACKET_COUNT,
-            OpenFlowFeature.SUM_PACKET_SIZE,
-            OpenFlowFeature.AVG_PACKET_SIZE
+            FlowFeature.RECEIVED_PACKET_COUNT,
+            FlowFeature.SUM_PACKET_SIZE,
+            FlowFeature.AVG_PACKET_SIZE
         ]
 
     def get_labels(self, **kwargs) -> Generator[Any, None, None]:

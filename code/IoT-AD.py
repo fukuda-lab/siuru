@@ -6,6 +6,7 @@ from joblib import load
 from sklearn.metrics import confusion_matrix
 
 import encode_features
+from dataloaders.MawiLoaderDummy import MawiLoaderDummy
 from models import random_forest, mlp_autoencoder
 from dataloaders.MQTTsetLoader import MQTTsetLoader
 from pipeline_logger import PipelineLogger
@@ -31,7 +32,7 @@ def main():
     # TODO Add feature selection when you have a lot of free time...
     # parser.add_argument("-p", "--packet-features", choices=[x for x in PacketFeature], default="all")
     # parser.add_argument("-h", "--host-features", choices=[x for x in HostFeature], default="all")
-    # parser.add_argument("-o", "--open-flow-features", choices=[x for x in OpenFlowFeature], default="all")
+    # parser.add_argument("-o", "--open-flow-features", choices=[x for x in FlowFeature], default="all")
 
     # TODO Feature encoding options.
 
@@ -50,7 +51,7 @@ def main():
     log.debug("Parsing arguments.")
     args = parser.parse_args()
 
-    available_dataloaders = [MQTTsetLoader]
+    available_dataloaders = [MQTTsetLoader, MawiLoaderDummy]
 
     feature_generators = []
     label_generators = []
