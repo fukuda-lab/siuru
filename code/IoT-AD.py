@@ -1,15 +1,18 @@
 import argparse
 import itertools
 import os
+import time
 
 from joblib import load
 from sklearn.metrics import confusion_matrix
 
 import encode_features
-from dataloaders.MawiLoaderDummy import MawiLoaderDummy
+from dataloaders.MawiLoader import MawiLoaderDummy
 from models import random_forest, mlp_autoencoder
 from dataloaders.MQTTsetLoader import MQTTsetLoader
 from pipeline_logger import PipelineLogger
+from prediction_output import Prediction, PredictionField
+from preprocess_features import PacketFeature
 
 log = PipelineLogger.get_logger()
 
@@ -51,10 +54,12 @@ def main():
     log.debug("Parsing arguments.")
     args = parser.parse_args()
 
+    # TODO update MawiLoader to use new DataLoader signature!
     available_dataloaders = [MQTTsetLoader, MawiLoaderDummy]
 
-    feature_generators = []
-    label_generators = []
+    feature_generators_list = []
+    metadata_generators_list = []
+    label_generators_list = []
     # TODO determine feature list as union from different data loaders, not just first signature.
     feature_list = []
 
@@ -87,8 +92,9 @@ def main():
                 if loader.can_load(file):
                     log.info(f"Adding {loader.__name__} to pipeline for input file: {file}")
                     loader_inst = loader()
-                    feature_generators.append(loader_inst.preprocess(**dataloader_kwargs))
-                    label_generators.append(loader_inst.get_labels(**dataloader_kwargs))
+                    feature_generators_list.append(loader_inst.get_features(**dataloader_kwargs))
+                    metadata_generators_list.append(loader_inst.get_metadata(**dataloader_kwargs))
+                    label_generators_list.append(loader_inst.get_labels(**dataloader_kwargs))
                     if not feature_list:
                         feature_list = loader_inst.feature_signature()
                     loadable = True
@@ -100,19 +106,20 @@ def main():
     elif args.device:
         raise NotImplementedError("TODO: Implement network device input to feature processor.")
 
-    processed_feature_generator = itertools.chain.from_iterable(feature_generators)
-    label_generator = itertools.chain.from_iterable(label_generators)
+    feature_generator = itertools.chain.from_iterable(feature_generators_list)
+    metadata_generator = itertools.chain.from_iterable(metadata_generators_list)
+    label_generator = itertools.chain.from_iterable(label_generators_list)
 
     if args.count:
         count = 0
-        for _ in processed_feature_generator:
+        for _ in feature_generator:
             count += 1
         log.info(f"Counted {count} data points.")
         return
 
     # Pick encoding -- there is only one for now.
     log.info("Encoding features.")
-    encoded_feature_generator = encode_features.default_encoding(processed_feature_generator)
+    encoded_feature_generator = encode_features.default_encoding(feature_generator)
 
     # Start models and reporting.
     if args.train:
@@ -132,13 +139,22 @@ def main():
                 (f for i, f in enumerate(feats) if labels[i] == 0),
                 (f for i, f in enumerate(feats) if labels[i] == 1),
             )
-    else:
+    else:  # Prediction time!
         if args.random_forest:
-            # TODO build output data object.
             predictor = random_forest.RF(model_store_file)
-            y_pred = predictor.predict(list(encoded_feature_generator))
-            cnf_matrix = confusion_matrix(list(label_generator), y_pred)
-            log.debug(f"\nConfusion matrix:\n\n{cnf_matrix}\n")
+            count = 0
+            start = time.perf_counter()
+            for sample, metadata in zip(encoded_feature_generator, metadata_generator):
+                # TODO Metadata must be passed depending on data the model was
+                #  trained with... how?
+                model_output = predictor.predict_packet(sample)
+                metadata[PredictionField.OUTPUT_BINARY.name] = model_output
+                metadata[PredictionField.MODEL_NAME.name] = predictor.name
+                p = Prediction(kwargs=metadata)
+                count += 1
+            end = time.perf_counter()
+            packets_per_second = count / (end - start)
+            log.info(f"Predicted {count} samples in {end - start} seconds ({packets_per_second} packets/s).")
 
         if args.autoencoder:
             pass

@@ -24,7 +24,7 @@ class MawiLoaderDummy(IDataLoader):
         return IDataLoader._get_path_relative_to_data_dir(filepath) in MawiLoaderDummy.SUPPORTED_FILES
 
     def preprocess(self, **kwargs) -> Generator[
-            Dict[Union[PacketFeature, HostFeature, HostFeature], Any], None, None]:
+            Dict[Union[PacketFeature, HostFeature, FlowFeature], Any], None, None]:
 
         log = PipelineLogger.get_logger()
 

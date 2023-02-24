@@ -8,6 +8,8 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import f1_score, precision_score, recall_score, confusion_matrix, accuracy_score
 from sklearn.model_selection import train_test_split
 
+from prediction_output import Prediction, PredictionField
+
 log = logging.getLogger()
 
 
@@ -46,5 +48,8 @@ class RF:
         self.model = load(path_to_model)
         self.name = os.path.splitext(os.path.basename(path_to_model))[0]
 
-    def predict(self, X):
+    def predict_array(self, X):
         return self.model.predict(X)
+
+    def predict_packet(self, x):
+        return self.model.predict(x.reshape(1, -1))

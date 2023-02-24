@@ -31,8 +31,12 @@ class MQTTsetLoader(IDataLoader):
     def can_load(filepath: str) -> bool:
         return IDataLoader._get_path_relative_to_data_dir(filepath) in MQTTsetLoader.SUPPORTED_FILES
 
-    def preprocess(self, **kwargs) -> Generator[
-            Dict[Union[PacketFeature, HostFeature, HostFeature], Any], None, None]:
+    def get_features(self, **kwargs) -> Generator[
+        Tuple[
+            Dict[Union[PacketFeature, HostFeature, FlowFeature], Any],
+            Dict[Union[PacketFeature, HostFeature, FlowFeature], Any]
+        ], None, None
+    ]:
 
         log = PipelineLogger.get_logger()
 
@@ -59,7 +63,8 @@ class MQTTsetLoader(IDataLoader):
         last_timestamp_by_flow: Dict[Tuple[str, str, int, int], pd.Timestamp] = defaultdict(lambda: pd.Timestamp(0))
 
         sum_inter_arrival_times_from_host: Dict[str, pd.Timedelta] = defaultdict(lambda: pd.Timedelta(0))
-        sum_inter_arrival_times_by_flow: Dict[Tuple[str, str, int, int], pd.Timedelta] = defaultdict(lambda: pd.Timedelta(0))
+        sum_inter_arrival_times_by_flow: Dict[Tuple[str, str, int, int], pd.Timedelta] = defaultdict(
+            lambda: pd.Timedelta(0))
 
         for packet_features in process.stdout.readlines():
             p = PacketData(packet_features)
@@ -83,7 +88,7 @@ class MQTTsetLoader(IDataLoader):
                 host_last_inter_arrival_time = p.timestamp - last_timestamp_from_host[p.source_ip]
                 sum_inter_arrival_times_from_host[p.source_ip] += host_last_inter_arrival_time
                 host_avg_inter_arrival_time = sum_inter_arrival_times_from_host[p.source_ip] / (
-                            packet_count_from_host[p.source_ip] - 1)
+                        packet_count_from_host[p.source_ip] - 1)
                 last_timestamp_from_host[p.source_ip] = p.timestamp
                 host_connection_duration = last_timestamp_from_host[p.source_ip] - first_timestamp_from_host[
                     p.source_ip]
@@ -97,16 +102,13 @@ class MQTTsetLoader(IDataLoader):
                 flow_last_inter_arrival_time = p.timestamp - last_timestamp_by_flow[p.flow_identifier]
                 sum_inter_arrival_times_by_flow[p.flow_identifier] += flow_last_inter_arrival_time
                 flow_avg_inter_arrival_time = sum_inter_arrival_times_by_flow[p.flow_identifier] / (
-                            packet_count_by_flow[p.flow_identifier] - 1)
+                        packet_count_by_flow[p.flow_identifier] - 1)
                 last_timestamp_by_flow[p.flow_identifier] = p.timestamp
                 flow_connection_duration = last_timestamp_by_flow[p.flow_identifier] - first_timestamp_by_flow[
                     p.flow_identifier]
 
             # TODO Add stats on packets sent to host.
             yield {
-                # PacketFeature.TIMESTAMP: p.timestamp,
-                # PacketFeature.IP_SOURCE_ADDRESS: None,
-                # PacketFeature.IP_DESTINATION_ADDRESS: None,
                 PacketFeature.IP_PACKET_SIZE: p.ip_size,
                 PacketFeature.TCP_CWR_FLAG: p.flag_cwr,
                 PacketFeature.TCP_ECE_FLAG: p.flag_ece,
@@ -135,6 +137,42 @@ class MQTTsetLoader(IDataLoader):
                 # FlowFeature.LAST_INTER_ARRIVAL_TIME: flow_last_inter_arrival_time,
                 # FlowFeature.AVG_INTER_ARRIVAL_TIME: flow_avg_inter_arrival_time,
                 # FlowFeature.CONNECTION_DURATION: flow_connection_duration,
+            }
+
+        log.info(f"[MQTTsetLoader] Extracted features for {overall_packet_counter} packets.")
+
+    def get_metadata(self, **kwargs) -> Generator[
+        Tuple[
+            Dict[Union[PacketFeature, HostFeature, FlowFeature], Any],
+            Dict[Union[PacketFeature, HostFeature, FlowFeature], Any]
+        ], None, None
+    ]:
+
+        log = PipelineLogger.get_logger()
+
+        assert kwargs["preprocessor_path"], kwargs["filepath"]
+        preprocessor_path = kwargs["preprocessor_path"]
+        filepath = kwargs["filepath"]
+
+        log.info(f"[MQTTsetLoader] Processing file: {filepath} for metadata.")
+
+        pcap_call = [preprocessor_path, "stream-file", filepath]
+        process = subprocess.Popen(pcap_call, stdout=subprocess.PIPE, universal_newlines=True)
+
+        overall_packet_counter = 0
+
+        for packet_features in process.stdout.readlines():
+            p = PacketData(packet_features)
+            if not p.is_valid:
+                continue
+            overall_packet_counter += 1
+            yield {
+                PacketFeature.TIMESTAMP: p.timestamp,
+                PacketFeature.IP_SOURCE_ADDRESS: p.source_ip,
+                PacketFeature.IP_DESTINATION_ADDRESS: p.destination_ip,
+                PacketFeature.IP_SOURCE_PORT: p.source_port,
+                PacketFeature.IP_DESTINATION_PORT: p.destination_port,
+                PacketFeature.PROTOCOL: p.protocol
             }
 
         log.info(f"[MQTTsetLoader] Extracted and processed {overall_packet_counter} packets.")

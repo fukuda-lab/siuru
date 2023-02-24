@@ -1,9 +1,9 @@
 import os
 import subprocess
 from abc import ABC, abstractmethod
-from typing import List, Union, Generator, Dict, Any
+from typing import List, Union, Generator, Dict, Any, Tuple
 
-from preprocess_features import PacketFeature, HostFeature
+from preprocess_features import PacketFeature, HostFeature, FlowFeature
 
 
 class IDataLoader(ABC):
@@ -17,12 +17,21 @@ class IDataLoader(ABC):
 
     @staticmethod
     @abstractmethod
-    def feature_signature() -> List[Union[PacketFeature, HostFeature, HostFeature]]:
+    def feature_signature() -> List[Union[PacketFeature, HostFeature, FlowFeature]]:
         return []
 
     @abstractmethod
-    def preprocess(self, **kwargs) -> Generator[
-            Dict[Union[PacketFeature, HostFeature, HostFeature], Any], None, None]:
+    def get_features(self, **kwargs) -> Generator[Dict[Union[PacketFeature, HostFeature, FlowFeature], Any], None, None]:
+        """
+        Yields a dictionary of preprocessed features per sample.
+        """
+        yield {}
+
+    @abstractmethod
+    def get_metadata(self, **kwargs) -> Generator[Dict[Union[PacketFeature, HostFeature, FlowFeature], Any], None, None]:
+        """
+        Yields a dictionary of metadata per sample.
+        """
         yield {}
 
     @abstractmethod
