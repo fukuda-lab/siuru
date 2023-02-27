@@ -52,4 +52,4 @@ class RF:
         return self.model.predict(X)
 
     def predict_packet(self, x):
-        return self.model.predict(x.reshape(1, -1))
+        return self.model.predict(x)
