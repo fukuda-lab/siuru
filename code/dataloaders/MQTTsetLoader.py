@@ -29,13 +29,15 @@ class MQTTsetLoader(IDataLoader):
 
     @staticmethod
     def can_load(filepath: str) -> bool:
-        return IDataLoader._get_path_relative_to_data_dir(filepath) in MQTTsetLoader.SUPPORTED_FILES
+        return (
+            IDataLoader._get_path_relative_to_data_dir(filepath)
+            in MQTTsetLoader.SUPPORTED_FILES
+        )
 
-    def get_features(self, **kwargs) -> Generator[
-        Tuple[
-            Dict[Union[PacketFeature, HostFeature, FlowFeature], Any],
-            Dict[Union[PacketFeature, HostFeature, FlowFeature], Any]
-        ], None, None
+    def get_features(
+        self, **kwargs
+    ) -> Generator[
+        Tuple[Dict[Union[PacketFeature, HostFeature, FlowFeature], Any]], None, None
     ]:
 
         log = PipelineLogger.get_logger()
@@ -47,24 +49,37 @@ class MQTTsetLoader(IDataLoader):
         log.info(f"[MQTTsetLoader] Processing file: {filepath}")
 
         pcap_call = [preprocessor_path, "stream-file", filepath]
-        process = subprocess.Popen(pcap_call, stdout=subprocess.PIPE, universal_newlines=True)
+        process = subprocess.Popen(
+            pcap_call, stdout=subprocess.PIPE, universal_newlines=True
+        )
 
         overall_packet_counter = 0
         packet_count_from_host: Dict[str, int] = defaultdict(lambda: 0)
-        packet_count_by_flow: Dict[Tuple[str, str, int, int], int] = defaultdict(lambda: 0)
+        packet_count_by_flow: Dict[Tuple[str, str, int, int], int] = defaultdict(
+            lambda: 0
+        )
 
         packet_size_sum_from_host: Dict[str, int] = defaultdict(lambda: 0)
-        packet_size_sum_by_flow: Dict[Tuple[str, str, int, int], int] = defaultdict(lambda: 0)
+        packet_size_sum_by_flow: Dict[Tuple[str, str, int, int], int] = defaultdict(
+            lambda: 0
+        )
 
         first_timestamp_from_host: Dict[str, pd.Timestamp] = {}
         first_timestamp_by_flow: Dict[Tuple[str, str, int, int], pd.Timestamp] = {}
 
-        last_timestamp_from_host: Dict[str, pd.Timestamp] = defaultdict(lambda: pd.Timestamp(0))
-        last_timestamp_by_flow: Dict[Tuple[str, str, int, int], pd.Timestamp] = defaultdict(lambda: pd.Timestamp(0))
+        last_timestamp_from_host: Dict[str, pd.Timestamp] = defaultdict(
+            lambda: pd.Timestamp(0)
+        )
+        last_timestamp_by_flow: Dict[
+            Tuple[str, str, int, int], pd.Timestamp
+        ] = defaultdict(lambda: pd.Timestamp(0))
 
-        sum_inter_arrival_times_from_host: Dict[str, pd.Timedelta] = defaultdict(lambda: pd.Timedelta(0))
-        sum_inter_arrival_times_by_flow: Dict[Tuple[str, str, int, int], pd.Timedelta] = defaultdict(
-            lambda: pd.Timedelta(0))
+        sum_inter_arrival_times_from_host: Dict[str, pd.Timedelta] = defaultdict(
+            lambda: pd.Timedelta(0)
+        )
+        sum_inter_arrival_times_by_flow: Dict[
+            Tuple[str, str, int, int], pd.Timedelta
+        ] = defaultdict(lambda: pd.Timedelta(0))
 
         for packet_features in process.stdout.readlines():
             p = PacketData(packet_features)
@@ -85,13 +100,20 @@ class MQTTsetLoader(IDataLoader):
                 host_connection_duration = None
                 first_timestamp_from_host[p.source_ip] = p.timestamp
             else:
-                host_last_inter_arrival_time = p.timestamp - last_timestamp_from_host[p.source_ip]
-                sum_inter_arrival_times_from_host[p.source_ip] += host_last_inter_arrival_time
-                host_avg_inter_arrival_time = sum_inter_arrival_times_from_host[p.source_ip] / (
-                        packet_count_from_host[p.source_ip] - 1)
+                host_last_inter_arrival_time = (
+                    p.timestamp - last_timestamp_from_host[p.source_ip]
+                )
+                sum_inter_arrival_times_from_host[
+                    p.source_ip
+                ] += host_last_inter_arrival_time
+                host_avg_inter_arrival_time = sum_inter_arrival_times_from_host[
+                    p.source_ip
+                ] / (packet_count_from_host[p.source_ip] - 1)
                 last_timestamp_from_host[p.source_ip] = p.timestamp
-                host_connection_duration = last_timestamp_from_host[p.source_ip] - first_timestamp_from_host[
-                    p.source_ip]
+                host_connection_duration = (
+                    last_timestamp_from_host[p.source_ip]
+                    - first_timestamp_from_host[p.source_ip]
+                )
 
             if p.flow_identifier not in first_timestamp_by_flow:
                 flow_last_inter_arrival_time = None
@@ -99,13 +121,20 @@ class MQTTsetLoader(IDataLoader):
                 flow_connection_duration = None
                 first_timestamp_by_flow[p.flow_identifier] = p.timestamp
             else:
-                flow_last_inter_arrival_time = p.timestamp - last_timestamp_by_flow[p.flow_identifier]
-                sum_inter_arrival_times_by_flow[p.flow_identifier] += flow_last_inter_arrival_time
-                flow_avg_inter_arrival_time = sum_inter_arrival_times_by_flow[p.flow_identifier] / (
-                        packet_count_by_flow[p.flow_identifier] - 1)
+                flow_last_inter_arrival_time = (
+                    p.timestamp - last_timestamp_by_flow[p.flow_identifier]
+                )
+                sum_inter_arrival_times_by_flow[
+                    p.flow_identifier
+                ] += flow_last_inter_arrival_time
+                flow_avg_inter_arrival_time = sum_inter_arrival_times_by_flow[
+                    p.flow_identifier
+                ] / (packet_count_by_flow[p.flow_identifier] - 1)
                 last_timestamp_by_flow[p.flow_identifier] = p.timestamp
-                flow_connection_duration = last_timestamp_by_flow[p.flow_identifier] - first_timestamp_by_flow[
-                    p.flow_identifier]
+                flow_connection_duration = (
+                    last_timestamp_by_flow[p.flow_identifier]
+                    - first_timestamp_by_flow[p.flow_identifier]
+                )
 
             # TODO Add stats on packets sent to host.
             yield {
@@ -118,34 +147,39 @@ class MQTTsetLoader(IDataLoader):
                 PacketFeature.TCP_RST_FLAG: p.flag_rst,
                 PacketFeature.TCP_SYN_FLAG: p.flag_syn,
                 PacketFeature.TCP_FIN_FLAG: p.flag_fin,
-
                 HostFeature.RECEIVED_PACKET_COUNT: packet_count_from_host[p.source_ip],
-                HostFeature.SUM_RECEIVED_PACKET_SIZE: packet_size_sum_from_host[p.source_ip],
-                HostFeature.AVG_RECEIVED_PACKET_SIZE: packet_size_sum_from_host[p.source_ip] / packet_count_from_host[
-                    p.source_ip],
+                HostFeature.SUM_RECEIVED_PACKET_SIZE: packet_size_sum_from_host[
+                    p.source_ip
+                ],
+                HostFeature.AVG_RECEIVED_PACKET_SIZE: packet_size_sum_from_host[
+                    p.source_ip
+                ]
+                / packet_count_from_host[p.source_ip],
                 # HostFeature.SENT_PACKET_COUNT: None,
                 # HostFeature.SUM_SENT_PACKET_SIZE: None,
                 # HostFeature.AVG_SENT_PACKET_SIZE: None,
                 # HostFeature.LAST_INTER_ARRIVAL_TIME: host_last_inter_arrival_time,
                 # HostFeature.AVG_INTER_ARRIVAL_TIME: host_avg_inter_arrival_time,
                 # HostFeature.CONNECTION_DURATION: host_connection_duration,
-
-                FlowFeature.RECEIVED_PACKET_COUNT: packet_count_by_flow[p.flow_identifier],
+                FlowFeature.RECEIVED_PACKET_COUNT: packet_count_by_flow[
+                    p.flow_identifier
+                ],
                 FlowFeature.SUM_PACKET_SIZE: packet_size_sum_by_flow[p.flow_identifier],
-                FlowFeature.AVG_PACKET_SIZE: packet_size_sum_by_flow[p.flow_identifier] / packet_count_by_flow[
-                    p.flow_identifier],
+                FlowFeature.AVG_PACKET_SIZE: packet_size_sum_by_flow[p.flow_identifier]
+                / packet_count_by_flow[p.flow_identifier],
                 # FlowFeature.LAST_INTER_ARRIVAL_TIME: flow_last_inter_arrival_time,
                 # FlowFeature.AVG_INTER_ARRIVAL_TIME: flow_avg_inter_arrival_time,
                 # FlowFeature.CONNECTION_DURATION: flow_connection_duration,
             }
 
-        log.info(f"[MQTTsetLoader] Extracted features for {overall_packet_counter} packets.")
+        log.info(
+            f"[MQTTsetLoader] Extracted features for {overall_packet_counter} packets."
+        )
 
-    def get_metadata(self, **kwargs) -> Generator[
-        Tuple[
-            Dict[Union[PacketFeature, HostFeature, FlowFeature], Any],
-            Dict[Union[PacketFeature, HostFeature, FlowFeature], Any]
-        ], None, None
+    def get_metadata(
+        self, **kwargs
+    ) -> Generator[
+        Tuple[Dict[Union[PacketFeature, HostFeature, FlowFeature], Any]], None, None
     ]:
 
         log = PipelineLogger.get_logger()
@@ -157,7 +191,9 @@ class MQTTsetLoader(IDataLoader):
         log.info(f"[MQTTsetLoader] Processing file: {filepath} for metadata.")
 
         pcap_call = [preprocessor_path, "stream-file", filepath]
-        process = subprocess.Popen(pcap_call, stdout=subprocess.PIPE, universal_newlines=True)
+        process = subprocess.Popen(
+            pcap_call, stdout=subprocess.PIPE, universal_newlines=True
+        )
 
         overall_packet_counter = 0
 
@@ -172,10 +208,12 @@ class MQTTsetLoader(IDataLoader):
                 PacketFeature.IP_DESTINATION_ADDRESS: p.destination_ip,
                 PacketFeature.IP_SOURCE_PORT: p.source_port,
                 PacketFeature.IP_DESTINATION_PORT: p.destination_port,
-                PacketFeature.PROTOCOL: p.protocol
+                PacketFeature.PROTOCOL: p.protocol,
             }
 
-        log.info(f"[MQTTsetLoader] Extracted and processed {overall_packet_counter} packets.")
+        log.info(
+            f"[MQTTsetLoader] Extracted and processed {overall_packet_counter} packets."
+        )
 
     @staticmethod
     def feature_signature() -> List[Union[PacketFeature, HostFeature, FlowFeature]]:
@@ -189,16 +227,16 @@ class MQTTsetLoader(IDataLoader):
             PacketFeature.TCP_RST_FLAG,
             PacketFeature.TCP_SYN_FLAG,
             PacketFeature.TCP_FIN_FLAG,
-
             HostFeature.RECEIVED_PACKET_COUNT,
             HostFeature.SUM_RECEIVED_PACKET_SIZE,
             HostFeature.AVG_RECEIVED_PACKET_SIZE,
-
             FlowFeature.RECEIVED_PACKET_COUNT,
             FlowFeature.SUM_PACKET_SIZE,
-            FlowFeature.AVG_PACKET_SIZE
+            FlowFeature.AVG_PACKET_SIZE,
         ]
 
     def get_labels(self, **kwargs) -> Generator[Any, None, None]:
         assert kwargs["filepath"]
-        yield from MQTTsetLoader.LABELS[IDataLoader._get_path_relative_to_data_dir(kwargs["filepath"])]
+        yield from MQTTsetLoader.LABELS[
+            IDataLoader._get_path_relative_to_data_dir(kwargs["filepath"])
+        ]

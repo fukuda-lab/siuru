@@ -85,16 +85,24 @@ def main():
             # Find a suitable dataloader.
             dataloader_kwargs = {
                 "filepath": file,
-                "preprocessor_path": args.preprocessor
+                "preprocessor_path": args.preprocessor,
             }
             loadable = False
             for loader in available_dataloaders:
                 if loader.can_load(file):
-                    log.info(f"Adding {loader.__name__} to pipeline for input file: {file}")
+                    log.info(
+                        f"Adding {loader.__name__} to pipeline for input file: {file}"
+                    )
                     loader_inst = loader()
-                    feature_generators_list.append(loader_inst.get_features(**dataloader_kwargs))
-                    metadata_generators_list.append(loader_inst.get_metadata(**dataloader_kwargs))
-                    label_generators_list.append(loader_inst.get_labels(**dataloader_kwargs))
+                    feature_generators_list.append(
+                        loader_inst.get_features(**dataloader_kwargs)
+                    )
+                    metadata_generators_list.append(
+                        loader_inst.get_metadata(**dataloader_kwargs)
+                    )
+                    label_generators_list.append(
+                        loader_inst.get_labels(**dataloader_kwargs)
+                    )
                     if not feature_list:
                         feature_list = loader_inst.feature_signature()
                     loadable = True
@@ -104,7 +112,9 @@ def main():
                 return
 
     elif args.device:
-        raise NotImplementedError("TODO: Implement network device input to feature processor.")
+        raise NotImplementedError(
+            "TODO: Implement network device input to feature processor."
+        )
 
     feature_generator = itertools.chain.from_iterable(feature_generators_list)
     metadata_generator = itertools.chain.from_iterable(metadata_generators_list)
@@ -128,7 +138,8 @@ def main():
                 encoded_feature_generator,
                 label_generator,
                 path_to_store=model_store_file,
-                feature_names=[str(f) for f in feature_list])
+                feature_names=[str(f) for f in feature_list],
+            )
         if args.autoencoder:
             # TODO: AE can be trained with anomalous or non-anomalous data,
             #  make the choice explicit!
@@ -154,11 +165,13 @@ def main():
                 count += 1
             end = time.perf_counter()
             packets_per_second = count / (end - start)
-            log.info(f"Predicted {count} samples in {end - start} seconds ({packets_per_second} packets/s).")
+            log.info(
+                f"Predicted {count} samples in {end - start} seconds ({packets_per_second} packets/s)."
+            )
 
         if args.autoencoder:
             pass
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

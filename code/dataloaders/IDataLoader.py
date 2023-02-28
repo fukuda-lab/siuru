@@ -10,6 +10,7 @@ class IDataLoader(ABC):
     """
     Generic interface for DataLoader classes to implement.
     """
+
     @staticmethod
     @abstractmethod
     def can_load(filepath: str) -> bool:
@@ -21,14 +22,22 @@ class IDataLoader(ABC):
         return []
 
     @abstractmethod
-    def get_features(self, **kwargs) -> Generator[Dict[Union[PacketFeature, HostFeature, FlowFeature], Any], None, None]:
+    def get_features(
+        self, **kwargs
+    ) -> Generator[
+        Dict[Union[PacketFeature, HostFeature, FlowFeature], Any], None, None
+    ]:
         """
         Yields a dictionary of preprocessed features per sample.
         """
         yield {}
 
     @abstractmethod
-    def get_metadata(self, **kwargs) -> Generator[Dict[Union[PacketFeature, HostFeature, FlowFeature], Any], None, None]:
+    def get_metadata(
+        self, **kwargs
+    ) -> Generator[
+        Dict[Union[PacketFeature, HostFeature, FlowFeature], Any], None, None
+    ]:
         """
         Yields a dictionary of metadata per sample.
         """
@@ -45,4 +54,4 @@ class IDataLoader(ABC):
             data_dir_idx = len(path_elements) - path_elements[::-1].index("data") - 1
         except ValueError:
             return None
-        return os.path.join(*path_elements[data_dir_idx + 1:])
+        return os.path.join(*path_elements[data_dir_idx + 1 :])

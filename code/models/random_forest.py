@@ -5,7 +5,13 @@ import numpy as np
 from joblib import dump, load
 
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import f1_score, precision_score, recall_score, confusion_matrix, accuracy_score
+from sklearn.metrics import (
+    f1_score,
+    precision_score,
+    recall_score,
+    confusion_matrix,
+    accuracy_score,
+)
 from sklearn.model_selection import train_test_split
 
 from prediction_output import Prediction, PredictionField
@@ -13,14 +19,17 @@ from prediction_output import Prediction, PredictionField
 log = logging.getLogger()
 
 
-def train(features: Generator[np.array, None, None],
-          y: Generator[Any, None, None],
-          path_to_store: str = None,
-          feature_names: Optional[List[str]] = None):
+def train(
+    features: Generator[np.array, None, None],
+    y: Generator[Any, None, None],
+    path_to_store: str = None,
+    feature_names: Optional[List[str]] = None,
+):
 
     log.info("Training a random forest classifier.")
     X_train, X_test, y_train, y_test = train_test_split(
-        list(features), list(y), test_size=0.33, random_state=8)
+        list(features), list(y), test_size=0.33, random_state=8
+    )
     rfc = RandomForestClassifier()
     rfc.fit(X_train, y_train)
 

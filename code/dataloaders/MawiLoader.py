@@ -11,9 +11,7 @@ from pipeline_logger import PipelineLogger
 
 
 class MawiLoaderDummy(IDataLoader):
-    SUPPORTED_FILES = [
-        "2006-08-24-14:00:00-WIDE/200608241400.dump"
-    ]
+    SUPPORTED_FILES = ["2006-08-24-14:00:00-WIDE/200608241400.dump"]
 
     LABELS = {
         "2006-08-24-14:00:00-WIDE/200608241400.dump": [0 for _ in range(0)]  # TODO
@@ -21,10 +19,16 @@ class MawiLoaderDummy(IDataLoader):
 
     @staticmethod
     def can_load(filepath: str) -> bool:
-        return IDataLoader._get_path_relative_to_data_dir(filepath) in MawiLoaderDummy.SUPPORTED_FILES
+        return (
+            IDataLoader._get_path_relative_to_data_dir(filepath)
+            in MawiLoaderDummy.SUPPORTED_FILES
+        )
 
-    def preprocess(self, **kwargs) -> Generator[
-            Dict[Union[PacketFeature, HostFeature, FlowFeature], Any], None, None]:
+    def preprocess(
+        self, **kwargs
+    ) -> Generator[
+        Dict[Union[PacketFeature, HostFeature, FlowFeature], Any], None, None
+    ]:
 
         log = PipelineLogger.get_logger()
 
@@ -35,7 +39,9 @@ class MawiLoaderDummy(IDataLoader):
         log.info(f"[MawiLoader] Processing file: {filepath}")
 
         pcap_call = [preprocessor_path, "stream-file", filepath]
-        process = subprocess.Popen(pcap_call, stdout=subprocess.PIPE, universal_newlines=True)
+        process = subprocess.Popen(
+            pcap_call, stdout=subprocess.PIPE, universal_newlines=True
+        )
 
         packet_counter = 0
 
@@ -51,4 +57,6 @@ class MawiLoaderDummy(IDataLoader):
 
     def get_labels(self, **kwargs) -> Generator[Any, None, None]:
         assert kwargs["filepath"]
-        yield from MawiLoaderDummy.LABELS[IDataLoader._get_path_relative_to_data_dir(kwargs["filepath"])]
+        yield from MawiLoaderDummy.LABELS[
+            IDataLoader._get_path_relative_to_data_dir(kwargs["filepath"])
+        ]
