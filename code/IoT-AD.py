@@ -3,16 +3,12 @@ import itertools
 import os
 import time
 
-from joblib import load
-from sklearn.metrics import confusion_matrix
-
 import encode_features
 from dataloaders.MawiLoader import MawiLoaderDummy
 from models import random_forest, mlp_autoencoder
 from dataloaders.MQTTsetLoader import MQTTsetLoader
 from pipeline_logger import PipelineLogger
 from prediction_output import Prediction, PredictionField
-from preprocess_features import PacketFeature
 
 log = PipelineLogger.get_logger()
 
