@@ -9,5 +9,5 @@ matplotlib
 pyx
 cryptography
 
-# C++ dependency manager
-conan
+# InfluxDB for data storage
+influxdb-client
