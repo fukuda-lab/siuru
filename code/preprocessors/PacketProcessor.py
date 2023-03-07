@@ -4,6 +4,7 @@ from typing import Tuple
 
 from pandas import Timestamp, Timedelta
 
+from prediction_output import PredictionField
 from preprocessors.common import (
     PacketData,
     PacketFeature,
@@ -50,7 +51,7 @@ class PacketProcessor:
 
     def process(
         self, p: PacketData
-    ) -> Dict[Union[PacketFeature, HostFeature, FlowFeature], Any]:
+    ) -> Dict[Union[PacketFeature, HostFeature, FlowFeature, PredictionField], float]:
         self.overall_packet_counter += 1
         if not p.is_valid:
             return None
@@ -65,9 +66,10 @@ class PacketProcessor:
         self.packet_size_sum_by_flow[p.flow_identifier] += p.ip_size
 
         if p.source_ip not in self.first_timestamp_from_host:
-            host_last_inter_arrival_time = None
-            host_avg_inter_arrival_time = None
-            host_connection_duration = None
+            # TODO switch to NaN? Needs special handling in decision trees.
+            host_last_inter_arrival_time = Timedelta(0)
+            host_avg_inter_arrival_time = Timedelta(0)
+            host_connection_duration = Timedelta(0)
             self.first_timestamp_from_host[p.source_ip] = p.timestamp
         else:
             host_last_inter_arrival_time = (
@@ -86,9 +88,10 @@ class PacketProcessor:
             )
 
         if p.flow_identifier not in self.first_timestamp_by_flow:
-            flow_last_inter_arrival_time = None
-            flow_avg_inter_arrival_time = None
-            flow_connection_duration = None
+            # TODO switch to NaN? Needs special handling in decision trees.
+            flow_last_inter_arrival_time = Timedelta(0)
+            flow_avg_inter_arrival_time = Timedelta(0)
+            flow_connection_duration = Timedelta(0)
             self.first_timestamp_by_flow[p.flow_identifier] = p.timestamp
         else:
             flow_last_inter_arrival_time = (
@@ -107,9 +110,6 @@ class PacketProcessor:
             )
 
         yield {
-            PacketFeature.TIMESTAMP: p.timestamp,
-            PacketFeature.IP_SOURCE_ADDRESS: None,
-            PacketFeature.IP_DESTINATION_ADDRESS: None,
             PacketFeature.IP_PACKET_SIZE: p.ip_size,
             PacketFeature.TCP_CWR_FLAG: p.flag_cwr,
             PacketFeature.TCP_ECE_FLAG: p.flag_ece,
@@ -135,9 +135,9 @@ class PacketProcessor:
                 p.source_ip
             ]
             / self.packet_count_to_host[p.destination_ip],
-            HostFeature.LAST_INTER_ARRIVAL_TIME: host_last_inter_arrival_time,
-            HostFeature.AVG_INTER_ARRIVAL_TIME: host_avg_inter_arrival_time,
-            HostFeature.CONNECTION_DURATION: host_connection_duration,
+            HostFeature.LAST_INTER_ARRIVAL_TIME: host_last_inter_arrival_time.value,
+            HostFeature.AVG_INTER_ARRIVAL_TIME: host_avg_inter_arrival_time.value,
+            HostFeature.CONNECTION_DURATION: host_connection_duration.value,
             FlowFeature.RECEIVED_PACKET_COUNT: self.packet_count_by_flow[
                 p.flow_identifier
             ],
@@ -146,7 +146,36 @@ class PacketProcessor:
             ],
             FlowFeature.AVG_PACKET_SIZE: self.packet_size_sum_by_flow[p.flow_identifier]
             / self.packet_count_by_flow[p.flow_identifier],
-            FlowFeature.LAST_INTER_ARRIVAL_TIME: flow_last_inter_arrival_time,
-            FlowFeature.AVG_INTER_ARRIVAL_TIME: flow_avg_inter_arrival_time,
-            FlowFeature.CONNECTION_DURATION: flow_connection_duration,
+            FlowFeature.LAST_INTER_ARRIVAL_TIME: flow_last_inter_arrival_time.value,
+            FlowFeature.AVG_INTER_ARRIVAL_TIME: flow_avg_inter_arrival_time.value,
+            FlowFeature.CONNECTION_DURATION: flow_connection_duration.value,
         }
+
+    @staticmethod
+    def signature():
+        return [
+            PacketFeature.IP_PACKET_SIZE,
+            PacketFeature.TCP_CWR_FLAG,
+            PacketFeature.TCP_ECE_FLAG,
+            PacketFeature.TCP_URG_FLAG,
+            PacketFeature.TCP_ACK_FLAG,
+            PacketFeature.TCP_PSH_FLAG,
+            PacketFeature.TCP_RST_FLAG,
+            PacketFeature.TCP_SYN_FLAG,
+            PacketFeature.TCP_FIN_FLAG,
+            HostFeature.RECEIVED_PACKET_COUNT,
+            HostFeature.SUM_RECEIVED_PACKET_SIZE,
+            HostFeature.AVG_RECEIVED_PACKET_SIZE,
+            HostFeature.SENT_PACKET_COUNT,
+            HostFeature.SUM_SENT_PACKET_SIZE,
+            HostFeature.AVG_SENT_PACKET_SIZE,
+            HostFeature.LAST_INTER_ARRIVAL_TIME,
+            HostFeature.AVG_INTER_ARRIVAL_TIME,
+            HostFeature.CONNECTION_DURATION,
+            FlowFeature.RECEIVED_PACKET_COUNT,
+            FlowFeature.SUM_PACKET_SIZE,
+            FlowFeature.AVG_PACKET_SIZE,
+            FlowFeature.LAST_INTER_ARRIVAL_TIME,
+            FlowFeature.AVG_INTER_ARRIVAL_TIME,
+            FlowFeature.CONNECTION_DURATION,
+        ]

@@ -2,6 +2,7 @@ import os
 from abc import ABC, abstractmethod
 from typing import List, Union, Generator, Dict, Any
 
+from prediction_output import PredictionField
 from preprocessors.common import PacketFeature, HostFeature, FlowFeature
 
 
@@ -17,14 +18,14 @@ class IDataLoader(ABC):
 
     @staticmethod
     @abstractmethod
-    def feature_signature() -> List[Union[PacketFeature, HostFeature, FlowFeature]]:
+    def feature_signature() -> List[Union[PacketFeature, HostFeature, FlowFeature, PredictionField]]:
         return []
 
     @abstractmethod
     def get_features(
         self, **kwargs
     ) -> Generator[
-        Dict[Union[PacketFeature, HostFeature, FlowFeature], Any], None, None
+        Dict[Union[PacketFeature, HostFeature, FlowFeature, PredictionField], Any], None, None
     ]:
         """
         Yields a dictionary of preprocessed features per sample.
@@ -35,7 +36,7 @@ class IDataLoader(ABC):
     def get_metadata(
         self, **kwargs
     ) -> Generator[
-        Dict[Union[PacketFeature, HostFeature, FlowFeature], Any], None, None
+        Dict[Union[PacketFeature, HostFeature, FlowFeature, PredictionField], Any], None, None
     ]:
         """
         Yields a dictionary of metadata per sample.

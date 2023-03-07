@@ -99,7 +99,7 @@ class PacketData:
             )
             self.features = json.loads(matched_input.group("features"))
 
-            self.timestamp = pandas.to_datetime(self.features["ts"], unit="ns")
+            self.timestamp = pandas.to_datetime(self.features["ts"], unit="us")
             self.ip_size = self.features["ip_len"]
 
             self.flag_cwr = self.features["tcp_flags"][0]

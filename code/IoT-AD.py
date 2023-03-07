@@ -9,6 +9,7 @@ from models import random_forest, mlp_autoencoder
 from dataloaders.MQTTsetLoader import MQTTsetLoader
 from pipeline_logger import PipelineLogger
 from prediction_output import Prediction, PredictionField
+from reporting.InfluxDBReporter import InfluxDBReporter
 
 log = PipelineLogger.get_logger()
 
@@ -16,10 +17,7 @@ log = PipelineLogger.get_logger()
 def main():
     """
     Start the IoT anomaly detection pipeline.
-
-    :return: TODO Exit code?
     """
-
     parser = argparse.ArgumentParser()
 
     # Input options.
@@ -41,11 +39,14 @@ def main():
     # Anomaly detection options.
     parser.add_argument("-t", "--train", action="store_true")
     parser.add_argument("-s", "--store-path", type=str, required=False)
-    # TODO Load a named model instead of hardcoded options.
     parser.add_argument("-r", "--random-forest", action="store_true")
     parser.add_argument("-a", "--autoencoder", action="store_true")
 
-    # TODO Reporting options.
+    # Reporting options.
+    parser.add_argument("--influx-url", type=str, required=False)
+    parser.add_argument("--influx-org", type=str, required=False)
+    parser.add_argument("--influx-bucket", type=str, required=False)
+    parser.add_argument("--influx-token", type=str, required=False)
 
     log.debug("Parsing arguments.")
     args = parser.parse_args()
@@ -56,7 +57,8 @@ def main():
     feature_generators_list = []
     metadata_generators_list = []
     label_generators_list = []
-    # TODO determine feature list as union from different data loaders, not just first signature.
+    # TODO determine feature list as union from different data loaders,
+    #  not just first signature.
     feature_list = []
 
     model_store_file = None
@@ -147,6 +149,18 @@ def main():
                 (f for i, f in enumerate(feats) if labels[i] == 1),
             )
     else:  # Prediction time!
+        reporter = None
+        labels = list(label_generator)
+        if args.influx_url:
+            assert args.influx_org and args.influx_token and args.influx_bucket, \
+                "Set InfluxDB index, token and bucket values to activate reporting!"
+            reporter = InfluxDBReporter(
+                args.influx_url,
+                args.influx_org,
+                args.influx_token,
+                args.influx_bucket
+            )
+
         if args.random_forest:
             predictor = random_forest.RF(model_store_file)
             count = 0
@@ -154,17 +168,16 @@ def main():
             for sample, metadata in zip(encoded_feature_generator, metadata_generator):
                 # TODO Metadata must be passed depending on data the model was
                 #  trained with... how?
-                model_output = predictor.predict_packet(sample)
-                metadata[PredictionField.OUTPUT_BINARY.name] = model_output
-                metadata[PredictionField.MODEL_NAME.name] = predictor.name
-                p = Prediction(kwargs=metadata)
+                model_output = predictor.predict_packet(sample.reshape(1, -1))
+                if reporter:
+                    p = Prediction(predictor.name, feature_list, sample, metadata, model_output)
+                    reporter.report(p, "kaiyodai_ship")
                 count += 1
             end = time.perf_counter()
             packets_per_second = count / (end - start)
             log.info(
                 f"Predicted {count} samples in {end - start} seconds ({packets_per_second} packets/s)."
             )
-
         if args.autoencoder:
             pass
 

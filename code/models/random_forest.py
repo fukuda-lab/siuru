@@ -14,8 +14,6 @@ from sklearn.metrics import (
 )
 from sklearn.model_selection import train_test_split
 
-from prediction_output import Prediction, PredictionField
-
 log = logging.getLogger()
 
 
@@ -25,7 +23,6 @@ def train(
     path_to_store: str = None,
     feature_names: Optional[List[str]] = None,
 ):
-
     log.info("Training a random forest classifier.")
     X_train, X_test, y_train, y_test = train_test_split(
         list(features), list(y), test_size=0.33, random_state=8
@@ -60,5 +57,5 @@ class RF:
     def predict_array(self, X):
         return self.model.predict(X)
 
-    def predict_packet(self, x):
-        return self.model.predict(x)
+    def predict_packet(self, x) -> int:
+        return int(self.model.predict(x)[0])
