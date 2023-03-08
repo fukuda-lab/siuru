@@ -7,7 +7,7 @@ from preprocessors.common import PacketFeature
 
 import pipeline_logger
 
-stop = 100000
+stop = 20000
 
 # TODO Create reporter interface.
 class InfluxDBReporter:
@@ -46,27 +46,23 @@ class InfluxDBReporter:
     def report(self, p: Prediction, measurement_name: str = "anomaly_detection"):
         global stop
 
-        t = p.fields[PacketFeature.TIMESTAMP].isoformat()
-        for k, v in p.fields.items():
-            if k == PacketFeature.TIMESTAMP or \
-                    k == PacketFeature.IP_SOURCE_ADDRESS or \
-                    k == PacketFeature.IP_SOURCE_PORT or \
-                    k == PacketFeature.IP_DESTINATION_ADDRESS or \
-                    k == PacketFeature.IP_DESTINATION_PORT or \
-                    k == PacketFeature.PROTOCOL:
-                continue
+        point = Point(measurement_name)
+        point.time(p.fields[PacketFeature.TIMESTAMP].isoformat(timespec="nanoseconds"))
+        point.tag(PacketFeature.IP_SOURCE_ADDRESS.value, p.fields[PacketFeature.IP_SOURCE_ADDRESS])
+        point.tag(PacketFeature.IP_SOURCE_PORT.value, p.fields[PacketFeature.IP_SOURCE_PORT])
+        point.tag(PacketFeature.IP_DESTINATION_ADDRESS.value, p.fields[PacketFeature.IP_DESTINATION_ADDRESS])
+        point.tag(PacketFeature.IP_DESTINATION_PORT.value, p.fields[PacketFeature.IP_DESTINATION_PORT])
+        point.tag(PacketFeature.PROTOCOL.value, p.fields[PacketFeature.PROTOCOL])
 
-            point = Point(f"{measurement_name}.{k.value}")
-            point.time(t)
-            point.field(k.value, v)
-            point.tag(PacketFeature.IP_SOURCE_ADDRESS.value, p.fields[PacketFeature.IP_SOURCE_ADDRESS])
-            point.tag(PacketFeature.IP_SOURCE_PORT.value, p.fields[PacketFeature.IP_SOURCE_PORT])
-            point.tag(PacketFeature.IP_DESTINATION_ADDRESS.value, p.fields[PacketFeature.IP_DESTINATION_ADDRESS])
-            point.tag(PacketFeature.IP_DESTINATION_PORT.value, p.fields[PacketFeature.IP_DESTINATION_PORT])
-            point.tag(PacketFeature.PROTOCOL.value, p.fields[PacketFeature.PROTOCOL])
+        if PredictionField.OUTPUT_BINARY in p.fields:
+            point.field(PredictionField.OUTPUT_BINARY.value, p.fields[PredictionField.OUTPUT_BINARY.value])
+        else:
+            raise NotImplementedError("TODO: Support other prediction outputs!")
 
-            self.write_api.write(bucket=self.bucket, org=self.org, record=point)
-            stop -= 1
-            if stop <= 0:
-                print("Stopped after 100000 data points.")
-                exit(0)
+        self.write_api.write(bucket=self.bucket, org=self.org, record=point)
+        stop -= 1
+        if stop <= 0:
+            print("Early stopping...")
+            exit(0)
+        elif stop % 5000 == 0:
+            print(point)
