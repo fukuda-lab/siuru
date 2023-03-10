@@ -37,12 +37,12 @@ Install [InfluxDB](https://docs.influxdata.com/influxdb/v2.6/install/) for examp
 a Docker container and follow the setup guide to create an organization and bucket.
 
 Also create a directory where InfluxDB should store the data. In the commands below,
-it is referred to as `</path/to/data/dir>`.
+it is referred to as `</project/root>/influxdb`.
 
 Start the image with:
 ```
 docker run -p 8086:8086 \
---volume </path/to/data/dir>:/var/lib/influxdb2 \
+--volume </project/root>/influxdb:/var/lib/influxdb2 \
 influxdb:2.6.1 --reporting-disabled
 ```
 
