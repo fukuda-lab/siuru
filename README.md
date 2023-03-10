@@ -1,7 +1,17 @@
-# IoT anomaly detection internship
+# IoT anomaly detection (IoT-AD) internship
 
 This repository contains materials and code from NII internship focused on creating a 
 framework for IoT anomaly detection.
+
+## System architecture
+
+Below is a diagram of the core components in the IoT-AD pipeline, with arrows marking
+the flow of data between components:
+
+![System architecture diagram](graphics/iot-ad-system-overview.svg)
+
+Elements in gray are not yet implemented. For details on the components, see the
+_Repository Structure_ section below.
 
 ## Quickstart
 
@@ -139,6 +149,9 @@ common datasets (MQTTSet / kaiyodai-ship, Mawi).
 ### code/Kafka
 
 The Docker container that can listen on network interfaces and capture packet data.
+As proof-of-concept, the following system was setup:
+
+![System architecture diagram](graphics/kafka-pcap-demo.svg)
 
 In the future, the container should offer access to all the IoT-AD functionalities
 from this project.
