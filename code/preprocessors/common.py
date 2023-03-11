@@ -81,7 +81,7 @@ class PacketData:
         r"(?P<features>{.+})"
     )
 
-    def __init__(self, feature_data: str, check: bool = False):
+    def __init__(self, feature_data: str):
         matched_input = PacketData.input_pattern.match(feature_data)
         if matched_input:
             self.is_valid = True

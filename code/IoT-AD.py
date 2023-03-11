@@ -1,7 +1,12 @@
 import argparse
 import itertools
+import json
 import os
+import subprocess
 import time
+from datetime import datetime
+
+from jinja2 import Template
 
 from dataloaders.MawiLoader import MawiLoaderDummy
 from encoders.DefaultEncoder import DefaultEncoder
@@ -20,10 +25,7 @@ def main():
     """
     parser = argparse.ArgumentParser()
 
-    # Input options.
-    parser.add_argument("-p", "--preprocessor", type=str, required=True)
-    parser.add_argument("-f", "--files", type=str, required=False, nargs="+")
-    parser.add_argument("-d", "--device", type=str, required=False)
+    parser.add_argument("-c", "--config-path", type=str, required=True)
 
     # Feature selection options.
     # TODO Add feature selection when you have a lot of free time...
@@ -32,9 +34,6 @@ def main():
     # parser.add_argument("-o", "--open-flow-features", choices=[x for x in FlowFeature], default="all")
 
     # TODO Feature encoding options.
-
-    # Output number of received data points. Iterates over all elements in generator.
-    parser.add_argument("-c", "--count", action="store_true")
 
     # Anomaly detection options.
     parser.add_argument("-t", "--train", action="store_true")
@@ -50,6 +49,36 @@ def main():
 
     log.debug("Parsing arguments.")
     args = parser.parse_args()
+
+    config_path = os.path.abspath(args.config_path)
+    assert os.path.exists(config_path), "Config file not found!"
+
+    def git_tag():
+        get_git_tag_cmd = ["git", "rev-parse", "--short", "HEAD"]
+        tag_result = subprocess.run(get_git_tag_cmd)
+        if tag_result == 0:
+            tag = tag_result.stdout.strip()
+            check_modifications_cmd = ["git", "diff", "--quiet", "--exit-code", "--cached"]
+            mod_result = subprocess.run(check_modifications_cmd)
+            if mod_result.returncode != 0:
+                tag += "-dirty"
+        else:
+            tag = "undefined"
+        return tag
+
+    def time_now():
+        return datetime.now().strftime("%Y-%m-%d-%H:%M:%S")
+
+    with open(config_path) as config_file:
+        template = Template(config_file.read())
+        template.globals['timestamp'] = time_now
+        template.globals['project_root'] = lambda: os.path.join(__file__, "..")
+        template.globals['git_tag'] = git_tag
+        configuration = json.loads(template.render())
+    assert configuration, "Could not load configuration file!"
+
+    print(configuration["VERSION"])
+    exit(0)
 
     # TODO update MawiLoader to use new DataLoader signature!
     available_dataloaders = [MQTTsetLoader, MawiLoaderDummy]

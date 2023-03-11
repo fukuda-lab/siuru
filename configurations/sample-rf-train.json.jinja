@@ -1,0 +1,10 @@
+{
+    "MODEL_NAME": "{{ timestamp() }}-rf",
+    "TRAIN_NEW_MODEL": true,
+    "CPP_FEATURE_EXTRACTOR": "{{ project_root() }}/cmake-build-debug/pcap-feature-extraction",
+    "DATASETS": [
+        "{{ project_root() }}/data/MQTTset/Data/PCAP/slowite.pcap",
+        "{{ project_root() }}data/MQTTset/Data/PCAP/capture_custom_1h.pcap"
+    ],
+    "VERSION": "{{ git_tag() }}"
+}

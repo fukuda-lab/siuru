@@ -14,7 +14,6 @@ log = pipeline_logger.PipelineLogger.get_logger()
 # TODO Create reporter interface.
 class InfluxDBReporter:
     def __init__(self, url, org, token, bucket):
-        # TODO Do not hardcode the bucket or the token...
         self.url = url
         self.org = org
         self.token = token

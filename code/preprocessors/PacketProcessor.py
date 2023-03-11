@@ -51,7 +51,7 @@ class PacketProcessor:
 
     def process(
         self, p: PacketData
-    ) -> Dict[Union[PacketFeature, HostFeature, FlowFeature, PredictionField], float]:
+    ) -> Union[Dict[Union[PacketFeature, HostFeature, FlowFeature, PredictionField], float], None]:
         self.overall_packet_counter += 1
         if not p.is_valid:
             return None
