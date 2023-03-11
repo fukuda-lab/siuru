@@ -45,7 +45,9 @@ class MQTTsetLoader(IDataLoader):
     def get_features(
         self, **kwargs
     ) -> Generator[
-        Dict[Union[PacketFeature, HostFeature, FlowFeature, PredictionField], Any], None, None
+        Dict[Union[PacketFeature, HostFeature, FlowFeature, PredictionField], Any],
+        None,
+        None,
     ]:
 
         log = PipelineLogger.get_logger()
@@ -68,7 +70,9 @@ class MQTTsetLoader(IDataLoader):
     def get_metadata(
         self, **kwargs
     ) -> Generator[
-        Dict[Union[PacketFeature, HostFeature, FlowFeature, PredictionField], Any], None, None
+        Dict[Union[PacketFeature, HostFeature, FlowFeature, PredictionField], Any],
+        None,
+        None,
     ]:
 
         log = PipelineLogger.get_logger()
@@ -105,7 +109,9 @@ class MQTTsetLoader(IDataLoader):
         )
 
     @staticmethod
-    def feature_signature() -> List[Union[PacketFeature, HostFeature, FlowFeature, PredictionField]]:
+    def feature_signature() -> List[
+        Union[PacketFeature, HostFeature, FlowFeature, PredictionField]
+    ]:
         return PacketProcessor.signature()
 
     def get_labels(self, **kwargs) -> Generator[Any, None, None]:

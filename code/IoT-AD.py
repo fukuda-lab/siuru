@@ -3,12 +3,12 @@ import itertools
 import os
 import time
 
-import encode_features
 from dataloaders.MawiLoader import MawiLoaderDummy
+from encoders.DefaultEncoder import DefaultEncoder
 from models import random_forest, mlp_autoencoder
 from dataloaders.MQTTsetLoader import MQTTsetLoader
 from pipeline_logger import PipelineLogger
-from prediction_output import Prediction, PredictionField
+from prediction_output import Prediction
 from reporting.InfluxDBReporter import InfluxDBReporter
 
 log = PipelineLogger.get_logger()
@@ -110,6 +110,7 @@ def main():
                 return
 
     elif args.device:
+        # TODO: Implement feature processing for network interface capture.
         raise NotImplementedError(
             "TODO: Implement network device input to feature processor."
         )
@@ -127,7 +128,8 @@ def main():
 
     # Pick encoding -- there is only one for now.
     log.info("Encoding features.")
-    encoded_feature_generator = encode_features.default_encoding(feature_generator)
+    e = DefaultEncoder()
+    encoded_feature_generator = e.encode(feature_generator)
 
     # Start models and reporting.
     if args.train:
@@ -139,8 +141,7 @@ def main():
                 feature_names=[str(f) for f in feature_list],
             )
         if args.autoencoder:
-            # TODO: AE can be trained with anomalous or non-anomalous data,
-            #  make the choice explicit!
+            # TODO: AE can be trained with anomalous or non-anomalous data, make the choice explicit!
             feats = list(encoded_feature_generator)
             labels = list(label_generator)
             mlp_autoencoder.train(
@@ -151,14 +152,20 @@ def main():
     else:  # Prediction time!
         reporter = None
         labels = list(label_generator)
-        if args.influx_url:
-            assert args.influx_org and args.influx_token and args.influx_bucket, \
-                "Set InfluxDB index, token and bucket values to activate reporting!"
+        if (
+            args.influx_url
+            or args.influx_org
+            or args.influx_token
+            or args.influx_bucket
+        ):
+            assert (
+                args.influx_url
+                and args.influx_org
+                and args.influx_token
+                and args.influx_bucket
+            ), "Set InfluxDB index, token and bucket values to activate reporting!"
             reporter = InfluxDBReporter(
-                args.influx_url,
-                args.influx_org,
-                args.influx_token,
-                args.influx_bucket
+                args.influx_url, args.influx_org, args.influx_token, args.influx_bucket
             )
 
         if args.random_forest:
@@ -170,7 +177,9 @@ def main():
                 #  trained with... how?
                 model_output = predictor.predict_packet(sample.reshape(1, -1))
                 if reporter:
-                    p = Prediction(predictor.name, feature_list, sample, metadata, model_output)
+                    p = Prediction(
+                        predictor.name, feature_list, sample, metadata, model_output
+                    )
                     reporter.report(p, "kaiyodai_ship")
                 count += 1
             end = time.perf_counter()

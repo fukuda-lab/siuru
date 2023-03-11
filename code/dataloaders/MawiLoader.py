@@ -25,7 +25,9 @@ class MawiLoaderDummy(IDataLoader):
     def preprocess(
         self, **kwargs
     ) -> Generator[
-        Dict[Union[PacketFeature, HostFeature, FlowFeature, PredictionField], Any], None, None
+        Dict[Union[PacketFeature, HostFeature, FlowFeature, PredictionField], Any],
+        None,
+        None,
     ]:
 
         log = PipelineLogger.get_logger()
@@ -50,7 +52,9 @@ class MawiLoaderDummy(IDataLoader):
         log.info(f"[MQTTsetLoader] Extracted and processed {packet_counter} packets.")
 
     @staticmethod
-    def feature_signature() -> List[Union[PacketFeature, HostFeature, FlowFeature, PredictionField]]:
+    def feature_signature() -> List[
+        Union[PacketFeature, HostFeature, FlowFeature, PredictionField]
+    ]:
         return []
 
     def get_labels(self, **kwargs) -> Generator[Any, None, None]:

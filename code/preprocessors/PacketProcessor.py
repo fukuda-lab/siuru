@@ -109,7 +109,7 @@ class PacketProcessor:
                 - self.first_timestamp_by_flow[p.flow_identifier]
             )
 
-        yield {
+        return {
             PacketFeature.IP_PACKET_SIZE: p.ip_size,
             PacketFeature.TCP_CWR_FLAG: p.flag_cwr,
             PacketFeature.TCP_ECE_FLAG: p.flag_ece,

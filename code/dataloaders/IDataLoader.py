@@ -8,7 +8,7 @@ from preprocessors.common import PacketFeature, HostFeature, FlowFeature
 
 class IDataLoader(ABC):
     """
-    Generic interface for DataLoader classes to implement.
+    Generic interface for data loading modules to implement.
     """
 
     @staticmethod
@@ -18,14 +18,18 @@ class IDataLoader(ABC):
 
     @staticmethod
     @abstractmethod
-    def feature_signature() -> List[Union[PacketFeature, HostFeature, FlowFeature, PredictionField]]:
+    def feature_signature() -> List[
+        Union[PacketFeature, HostFeature, FlowFeature, PredictionField]
+    ]:
         return []
 
     @abstractmethod
     def get_features(
         self, **kwargs
     ) -> Generator[
-        Dict[Union[PacketFeature, HostFeature, FlowFeature, PredictionField], Any], None, None
+        Dict[Union[PacketFeature, HostFeature, FlowFeature, PredictionField], Any],
+        None,
+        None,
     ]:
         """
         Yields a dictionary of preprocessed features per sample.
@@ -36,7 +40,9 @@ class IDataLoader(ABC):
     def get_metadata(
         self, **kwargs
     ) -> Generator[
-        Dict[Union[PacketFeature, HostFeature, FlowFeature, PredictionField], Any], None, None
+        Dict[Union[PacketFeature, HostFeature, FlowFeature, PredictionField], Any],
+        None,
+        None,
     ]:
         """
         Yields a dictionary of metadata per sample.
