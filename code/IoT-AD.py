@@ -5,9 +5,11 @@ import os
 import subprocess
 import time
 from datetime import datetime
+from types import SimpleNamespace
 
 from jinja2 import Template
 
+from configuration import Configuration
 from dataloaders.MawiLoader import MawiLoaderDummy
 from encoders.DefaultEncoder import DefaultEncoder
 from models import random_forest, mlp_autoencoder
@@ -36,15 +38,10 @@ def main():
     # TODO Feature encoding options.
 
     # Anomaly detection options.
-    parser.add_argument("-t", "--train", action="store_true")
-    parser.add_argument("-s", "--store-path", type=str, required=False)
     parser.add_argument("-r", "--random-forest", action="store_true")
     parser.add_argument("-a", "--autoencoder", action="store_true")
 
     # Reporting options.
-    parser.add_argument("--influx-url", type=str, required=False)
-    parser.add_argument("--influx-org", type=str, required=False)
-    parser.add_argument("--influx-bucket", type=str, required=False)
     parser.add_argument("--influx-token", type=str, required=False)
 
     log.debug("Parsing arguments.")
@@ -55,13 +52,13 @@ def main():
 
     def git_tag():
         get_git_tag_cmd = ["git", "rev-parse", "--short", "HEAD"]
-        tag_result = subprocess.run(get_git_tag_cmd)
-        if tag_result == 0:
-            tag = tag_result.stdout.strip()
-            check_modifications_cmd = ["git", "diff", "--quiet", "--exit-code", "--cached"]
+        tag_result = subprocess.run(get_git_tag_cmd, capture_output=True)
+        if tag_result.returncode == 0:
+            tag = tag_result.stdout.decode("utf-8").strip()
+            check_modifications_cmd = ["git", "diff", "--quiet", "--exit-code"]
             mod_result = subprocess.run(check_modifications_cmd)
             if mod_result.returncode != 0:
-                tag += "-dirty"
+                tag += "-edited"
         else:
             tag = "undefined"
         return tag
@@ -69,16 +66,18 @@ def main():
     def time_now():
         return datetime.now().strftime("%Y-%m-%d-%H:%M:%S")
 
+    def project_root():
+        return os.path.abspath(os.path.join(__file__, ".."))
+
+    log.debug(f"Loading configuration from: {config_path}")
     with open(config_path) as config_file:
         template = Template(config_file.read())
-        template.globals['timestamp'] = time_now
-        template.globals['project_root'] = lambda: os.path.join(__file__, "..")
-        template.globals['git_tag'] = git_tag
-        configuration = json.loads(template.render())
+        template.globals["timestamp"] = time_now
+        template.globals["project_root"] = project_root
+        template.globals["git_tag"] = git_tag
+        configuration = json.loads(template.render(), object_hook=lambda c: Configuration(c))
     assert configuration, "Could not load configuration file!"
-
-    print(configuration["VERSION"])
-    exit(0)
+    log.debug("Configuration loaded!")
 
     # TODO update MawiLoader to use new DataLoader signature!
     available_dataloaders = [MQTTsetLoader, MawiLoaderDummy]
@@ -92,27 +91,29 @@ def main():
 
     model_store_file = None
     # Check that the desired model saving path is free.
-    if args.train and args.store_path:
-        model_store_file = os.path.abspath(args.store_path)
+    if configuration.train_new_model and configuration.save_model:
+        model_store_file = os.path.abspath(configuration.model_save_path)
         if os.path.exists(model_store_file):
             log.error(f"Model storing path already exists: {model_store_file}")
             return
         model_store_dir = os.path.dirname(model_store_file)
         if not os.path.exists(model_store_dir):
             os.mkdir(model_store_dir)
-    elif not args.train and args.store_path:
-        model_store_file = os.path.abspath(args.store_path)
+
+    # Check that the specified model can be loaded.
+    if not configuration.train_new_model:
+        model_store_file = os.path.abspath(configuration.model_save_path)
         if not os.path.exists(model_store_file):
             log.error(f"No file found under the path: {model_store_file}")
             return
 
     # Pass input for processing.
-    if args.files:
-        for file in args.files:
+    if configuration.datasets:
+        for file in configuration.dataset:
             # Find a suitable dataloader.
             dataloader_kwargs = {
                 "filepath": file,
-                "preprocessor_path": args.preprocessor,
+                "preprocessor_path": configuration.cpp_feature_extractor,
             }
             loadable = False
             for loader in available_dataloaders:
@@ -138,11 +139,9 @@ def main():
                 log.error(f"No data preprocessor available for file: {file}")
                 return
 
-    elif args.device:
+    elif False:
         # TODO: Implement feature processing for network interface capture.
-        raise NotImplementedError(
-            "TODO: Implement network device input to feature processor."
-        )
+        pass
 
     feature_generator = itertools.chain.from_iterable(feature_generators_list)
     metadata_generator = itertools.chain.from_iterable(metadata_generators_list)
@@ -161,7 +160,7 @@ def main():
     encoded_feature_generator = e.encode(feature_generator)
 
     # Start models and reporting.
-    if args.train:
+    if configuration.train_new_model:
         if args.random_forest:
             random_forest.train(
                 encoded_feature_generator,

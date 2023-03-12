@@ -1,6 +1,9 @@
 {
     "MODEL_NAME": "{{ timestamp() }}-rf",
     "TRAIN_NEW_MODEL": true,
+    "SAVE_MODEL": true,
+    "LOAD_MODEL": false,
+    "MODEL_STORAGE_BASE_PATH": "{{ project_root() }}/models",
     "CPP_FEATURE_EXTRACTOR": "{{ project_root() }}/cmake-build-debug/pcap-feature-extraction",
     "DATASETS": [
         "{{ project_root() }}/data/MQTTset/Data/PCAP/slowite.pcap",
