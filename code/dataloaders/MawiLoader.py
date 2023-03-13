@@ -8,6 +8,7 @@ from preprocessors.common import PacketFeature, HostFeature, FlowFeature
 from pipeline_logger import PipelineLogger
 
 
+# TODO update MawiLoader to use the new DataLoader signature!
 class MawiLoaderDummy(IDataLoader):
     SUPPORTED_FILES = ["2006-08-24-14:00:00-WIDE/200608241400.dump"]
 

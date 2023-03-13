@@ -5,15 +5,13 @@ import os
 import subprocess
 import time
 from datetime import datetime
-from types import SimpleNamespace
 
 from jinja2 import Template
 
 from configuration import Configuration
-from dataloaders.MawiLoader import MawiLoaderDummy
+from dataloaders import *
 from encoders.DefaultEncoder import DefaultEncoder
 from models import random_forest, mlp_autoencoder
-from dataloaders.MQTTsetLoader import MQTTsetLoader
 from pipeline_logger import PipelineLogger
 from prediction_output import Prediction
 from reporting.InfluxDBReporter import InfluxDBReporter
@@ -75,12 +73,14 @@ def main():
         template.globals["timestamp"] = time_now
         template.globals["project_root"] = project_root
         template.globals["git_tag"] = git_tag
-        configuration = json.loads(template.render(), object_hook=lambda c: Configuration(c))
+        configuration = json.loads(template.render())
     assert configuration, "Could not load configuration file!"
     log.debug("Configuration loaded!")
 
-    # TODO update MawiLoader to use new DataLoader signature!
-    available_dataloaders = [MQTTsetLoader, MawiLoaderDummy]
+
+    test_data_source_args = configuration["DATA_SOURCES"][0]
+    loader_name = test_data_source_args["loader"]
+    loader_class = globals()[loader_name]
 
     feature_generators_list = []
     metadata_generators_list = []
