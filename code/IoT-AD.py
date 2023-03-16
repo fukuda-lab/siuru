@@ -9,9 +9,9 @@ from datetime import datetime
 from jinja2 import Template
 
 from configuration import Configuration
-from dataloaders import *
+import dataloaders
+import models
 from encoders.DefaultEncoder import DefaultEncoder
-from models import random_forest, mlp_autoencoder
 from pipeline_logger import PipelineLogger
 from prediction_output import Prediction
 from reporting.InfluxDBReporter import InfluxDBReporter
@@ -27,13 +27,7 @@ def main():
 
     parser.add_argument("-c", "--config-path", type=str, required=True)
 
-    # Feature selection options.
     # TODO Add feature selection when you have a lot of free time...
-    # parser.add_argument("-p", "--packet-features", choices=[x for x in PacketFeature], default="all")
-    # parser.add_argument("-h", "--host-features", choices=[x for x in HostFeature], default="all")
-    # parser.add_argument("-o", "--open-flow-features", choices=[x for x in FlowFeature], default="all")
-
-    # TODO Feature encoding options.
 
     # Anomaly detection options.
     parser.add_argument("-r", "--random-forest", action="store_true")
@@ -77,82 +71,63 @@ def main():
     assert configuration, "Could not load configuration file!"
     log.debug("Configuration loaded!")
 
-
-    test_data_source_args = configuration["DATA_SOURCES"][0]
-    loader_name = test_data_source_args["loader"]
-    loader_class = globals()[loader_name]
-
     feature_generators_list = []
     metadata_generators_list = []
     label_generators_list = []
-    # TODO determine feature list as union from different data loaders,
-    #  not just first signature.
     feature_list = []
 
-    model_store_file = None
-    # Check that the desired model saving path is free.
-    if configuration.train_new_model and configuration.save_model:
-        model_store_file = os.path.abspath(configuration.model_save_path)
-        if os.path.exists(model_store_file):
-            log.error(f"Model storing path already exists: {model_store_file}")
-            return
-        model_store_dir = os.path.dirname(model_store_file)
-        if not os.path.exists(model_store_dir):
-            os.mkdir(model_store_dir)
+    for data_source in configuration["DATA_SOURCES"]:
+        loader_name = data_source["loader"]
+        loader_class = globals()[loader_name]
+        loader: dataloaders.IDataLoader = loader_class()
 
-    # Check that the specified model can be loaded.
-    if not configuration.train_new_model:
-        model_store_file = os.path.abspath(configuration.model_save_path)
-        if not os.path.exists(model_store_file):
-            log.error(f"No file found under the path: {model_store_file}")
-            return
+        dataloader_kwargs = {
+            "filepath": data_source["path"],
+            "preprocessor_path": configuration.cpp_feature_extractor,
+        }
 
-    # Pass input for processing.
-    if configuration.datasets:
-        for file in configuration.dataset:
-            # Find a suitable dataloader.
-            dataloader_kwargs = {
-                "filepath": file,
-                "preprocessor_path": configuration.cpp_feature_extractor,
-            }
-            loadable = False
-            for loader in available_dataloaders:
-                if loader.can_load(file):
-                    log.info(
-                        f"Adding {loader.__name__} to pipeline for input file: {file}"
-                    )
-                    loader_inst = loader()
-                    feature_generators_list.append(
-                        loader_inst.get_features(**dataloader_kwargs)
-                    )
-                    metadata_generators_list.append(
-                        loader_inst.get_metadata(**dataloader_kwargs)
-                    )
-                    label_generators_list.append(
-                        loader_inst.get_labels(**dataloader_kwargs)
-                    )
-                    if not feature_list:
-                        feature_list = loader_inst.feature_signature()
-                    loadable = True
-                    break
-            if not loadable:
-                log.error(f"No data preprocessor available for file: {file}")
-                return
+        feature_generators_list.append(
+            loader.get_features(**dataloader_kwargs)
+        )
+        metadata_generators_list.append(
+            loader.get_metadata(**dataloader_kwargs)
+        )
+        label_generators_list.append(
+            loader.get_labels(**dataloader_kwargs)
+        )
+        if not feature_list:
+            # TODO determine feature list as union from different data loaders,
+            #  not just first signature.
+            feature_list = loader.feature_signature()
 
-    elif False:
-        # TODO: Implement feature processing for network interface capture.
-        pass
+        log.info(f"Adding {loader.__name__} to pipeline.")
+        log.debug(f"File to be loaded: {data_source['path']}")
+
+    for model in configuration["MODELS"]:
+        # Initialize model from class name.
+        model_name = model["module"]
+        model_class = globals()[model_name]
+        model_instance: models.IAnomalyDetectionModel = model_class()
+        # Check that the specified model can be loaded.
+        if model["USE_EXISTING_MODEL"]:
+            model_store_file = os.path.abspath(configuration.model_save_path)
+            if not os.path.exists(model.store_path):
+                log.error(f"No file found under the path: {model_store_file}")
+                exit(1)
+
+        elif not model["SKIP_SAVING_MODEL"]:
+            # Check that the desired model saving path is free.
+            model_store_file = os.path.abspath(configuration.model_save_path)
+            if os.path.exists(model_store_file):
+                log.error(f"Model storing path already exists: {model_store_file}")
+                exit(1)
+            model_store_dir = os.path.dirname(model_store_file)
+            if not os.path.exists(model_store_dir):
+                os.mkdir(model_store_dir)
 
     feature_generator = itertools.chain.from_iterable(feature_generators_list)
     metadata_generator = itertools.chain.from_iterable(metadata_generators_list)
     label_generator = itertools.chain.from_iterable(label_generators_list)
-
-    if args.count:
-        count = 0
-        for _ in feature_generator:
-            count += 1
-        log.info(f"Counted {count} data points.")
-        return
 
     # Pick encoding -- there is only one for now.
     log.info("Encoding features.")
@@ -160,8 +135,9 @@ def main():
     encoded_feature_generator = e.encode(feature_generator)
 
     # Start models and reporting.
-    if configuration.train_new_model:
-        if args.random_forest:
+    for model in configuration["MODEL"]:
+        if not model["USE_EXISTING_MODEL"] and \
+                model["module"] == "RandomForestTrainer":
             random_forest.train(
                 encoded_feature_generator,
                 label_generator,
@@ -181,16 +157,16 @@ def main():
         reporter = None
         labels = list(label_generator)
         if (
-            args.influx_url
-            or args.influx_org
-            or args.influx_token
-            or args.influx_bucket
+                args.influx_url
+                or args.influx_org
+                or args.influx_token
+                or args.influx_bucket
         ):
             assert (
-                args.influx_url
-                and args.influx_org
-                and args.influx_token
-                and args.influx_bucket
+                    args.influx_url
+                    and args.influx_org
+                    and args.influx_token
+                    and args.influx_bucket
             ), "Set InfluxDB index, token and bucket values to activate reporting!"
             reporter = InfluxDBReporter(
                 args.influx_url, args.influx_org, args.influx_token, args.influx_bucket

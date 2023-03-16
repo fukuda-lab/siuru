@@ -33,7 +33,9 @@
     ],
     "MODELS": [
         {
-            "module": "RandomForestTrainer",
+            "USE_EXISTING_MODEL": false,
+            "SKIP_SAVING_MODEL": false,
+                "module": "RandomForestTrainer",
             "MODEL_NAME": "{{ timestamp() }}-rf",
             "ENCODER": "DefaultEncoder",
             "FEATURES": [
