@@ -27,6 +27,15 @@ In addition, the following dependencies are needed:
 sudo apt install libpcap0.8 libpcap0.8-dev libpcap0.8-dbg
 ```
 
+Build and install PcapPlusPlus as follows:
+
+```bash
+cd code/cpp-extract-features/PcapPlusPlus
+cmake -S . -B build
+cmake --build build
+sudo cmake --install build
+```
+
 Then run from repository root:
 
 ```bash
