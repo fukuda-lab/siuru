@@ -5,12 +5,13 @@ import os
 import subprocess
 import time
 from datetime import datetime
+from typing import List
 
 from jinja2 import Template
 
-from configuration import Configuration
-import dataloaders
-import models
+from dataloaders import *
+from models import *
+
 from encoders.DefaultEncoder import DefaultEncoder
 from pipeline_logger import PipelineLogger
 from prediction_output import Prediction
@@ -28,10 +29,6 @@ def main():
     parser.add_argument("-c", "--config-path", type=str, required=True)
 
     # TODO Add feature selection when you have a lot of free time...
-
-    # Anomaly detection options.
-    parser.add_argument("-r", "--random-forest", action="store_true")
-    parser.add_argument("-a", "--autoencoder", action="store_true")
 
     # Reporting options.
     parser.add_argument("--influx-token", type=str, required=False)
@@ -79,22 +76,12 @@ def main():
     for data_source in configuration["DATA_SOURCES"]:
         loader_name = data_source["loader"]
         loader_class = globals()[loader_name]
-        loader: dataloaders.IDataLoader = loader_class()
+        loader: IDataLoader = loader_class(**data_source)
 
-        dataloader_kwargs = {
-            "filepath": data_source["path"],
-            "preprocessor_path": configuration.cpp_feature_extractor,
-        }
+        feature_generators_list.append(loader.get_features())
+        metadata_generators_list.append(loader.get_metadata())
+        label_generators_list.append(loader.get_labels())
 
-        feature_generators_list.append(
-            loader.get_features(**dataloader_kwargs)
-        )
-        metadata_generators_list.append(
-            loader.get_metadata(**dataloader_kwargs)
-        )
-        label_generators_list.append(
-            loader.get_labels(**dataloader_kwargs)
-        )
         if not feature_list:
             # TODO determine feature list as union from different data loaders,
             #  not just first signature.
@@ -103,27 +90,14 @@ def main():
         log.info(f"Adding {loader.__name__} to pipeline.")
         log.debug(f"File to be loaded: {data_source['path']}")
 
+    model_instances: List[IAnomalyDetectionModel] = []
+
     for model in configuration["MODELS"]:
         # Initialize model from class name.
         model_name = model["module"]
         model_class = globals()[model_name]
-        model_instance: models.IAnomalyDetectionModel = model_class()
-        # Check that the specified model can be loaded.
-        if model["USE_EXISTING_MODEL"]:
-            model_store_file = os.path.abspath(configuration.model_save_path)
-            if not os.path.exists(model.store_path):
-                log.error(f"No file found under the path: {model_store_file}")
-                exit(1)
-
-        elif not model["SKIP_SAVING_MODEL"]:
-            # Check that the desired model saving path is free.
-            model_store_file = os.path.abspath(configuration.model_save_path)
-            if os.path.exists(model_store_file):
-                log.error(f"Model storing path already exists: {model_store_file}")
-                exit(1)
-            model_store_dir = os.path.dirname(model_store_file)
-            if not os.path.exists(model_store_dir):
-                os.mkdir(model_store_dir)
+        model_instance: IAnomalyDetectionModel = model_class()
+        model_instances.append(model_instance)
 
     feature_generator = itertools.chain.from_iterable(feature_generators_list)
     metadata_generator = itertools.chain.from_iterable(metadata_generators_list)
@@ -135,10 +109,11 @@ def main():
     encoded_feature_generator = e.encode(feature_generator)
 
     # Start models and reporting.
-    for model in configuration["MODEL"]:
-        if not model["USE_EXISTING_MODEL"] and \
-                model["module"] == "RandomForestTrainer":
-            random_forest.train(
+    for model in model_instances:
+        if not model.use_existing_model:
+            # Train the model.
+            # TODO Define training and test data split.
+            model.train(
                 encoded_feature_generator,
                 label_generator,
                 path_to_store=model_store_file,
@@ -173,7 +148,7 @@ def main():
             )
 
         if args.random_forest:
-            predictor = random_forest.RF(model_store_file)
+            predictor = random_forest.RandomForestModel(model_store_file)
             count = 0
             start = time.perf_counter()
             for sample, metadata in zip(encoded_feature_generator, metadata_generator):

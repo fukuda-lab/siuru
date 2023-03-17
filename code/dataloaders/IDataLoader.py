@@ -24,9 +24,7 @@ class IDataLoader(ABC):
         return []
 
     @abstractmethod
-    def get_features(
-        self, **kwargs
-    ) -> Generator[
+    def get_features(self) -> Generator[
         Dict[Union[PacketFeature, HostFeature, FlowFeature, PredictionField], Any],
         None,
         None,
@@ -37,9 +35,7 @@ class IDataLoader(ABC):
         yield {}
 
     @abstractmethod
-    def get_metadata(
-        self, **kwargs
-    ) -> Generator[
+    def get_metadata(self) -> Generator[
         Dict[Union[PacketFeature, HostFeature, FlowFeature, PredictionField], Any],
         None,
         None,
@@ -50,7 +46,7 @@ class IDataLoader(ABC):
         yield {}
 
     @abstractmethod
-    def get_labels(self, **kwargs) -> Generator[Any, None, None]:
+    def get_labels(self) -> Generator[Any, None, None]:
         yield []
 
     @staticmethod

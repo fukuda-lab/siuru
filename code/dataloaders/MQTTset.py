@@ -35,6 +35,10 @@ class MQTTsetLoader(IDataLoader):
         "kaiyodai-ship/tcpdump/mqtt-sensor.cap": [0 for _ in range(1)],
     }
 
+    def __init__(self, filepath, preprocessor_path):
+        self.filepath = filepath
+        self.preprocessor_path = preprocessor_path
+
     @staticmethod
     def can_load(filepath: str) -> bool:
         return (
@@ -42,9 +46,7 @@ class MQTTsetLoader(IDataLoader):
             in MQTTsetLoader.SUPPORTED_FILES
         )
 
-    def get_features(
-        self, **kwargs
-    ) -> Generator[
+    def get_features(self) -> Generator[
         Dict[Union[PacketFeature, HostFeature, FlowFeature, PredictionField], Any],
         None,
         None,
@@ -52,13 +54,9 @@ class MQTTsetLoader(IDataLoader):
 
         log = PipelineLogger.get_logger()
 
-        assert kwargs["preprocessor_path"], kwargs["filepath"]
-        preprocessor_path = kwargs["preprocessor_path"]
-        filepath = kwargs["filepath"]
+        log.info(f"[MQTTsetLoader] Processing file: {self.filepath}")
 
-        log.info(f"[MQTTsetLoader] Processing file: {filepath}")
-
-        pcap_call = [preprocessor_path, "stream-file", filepath]
+        pcap_call = [self.preprocessor_path, "stream-file", self.filepath]
         process = subprocess.Popen(
             pcap_call, stdout=subprocess.PIPE, universal_newlines=True
         )
