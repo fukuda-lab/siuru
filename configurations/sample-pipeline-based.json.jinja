@@ -33,20 +33,21 @@
     ],
     "MODELS": [
         {
-            "USE_EXISTING_MODEL": false,
-            "SKIP_SAVING_MODEL": false,
-                "module": "RandomForestTrainer",
-            "MODEL_NAME": "{{ timestamp() }}-rf",
-            "ENCODER": "DefaultEncoder",
-            "FEATURES": [
+            "module": "RandomForestAD",
+            "use_existing_model": false,
+            "skip_saving_model": false,
+            "model_name": "{{ timestamp() }}-test-rf",
+            "encoder": "DefaultEncoder",
+            "features": [
                 "TODO only for models to be trained. Should support feature selection",
                 "modules instead of hardcoding. After training, save the feature lists",
                 "and validate that the set is available when starting prediction."
             ]
         },
         {
-            "module": "RandomForestPredictor",
-            "MODEL_NAME": "{{ timestamp() }}-rf"
+            "module": "RandomForestAD",
+            "model_name": "{{ timestamp() }}-test-rf",
+            "use_existing_model": true
         }
     ],
     "OUTPUT": [

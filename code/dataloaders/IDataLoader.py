@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from typing import List, Union, Generator, Dict, Any
 
 from prediction_output import PredictionField
-from preprocessors.common import PacketFeature, HostFeature, FlowFeature
+from common.features import IFeature
 
 
 class IDataLoader(ABC):
@@ -13,19 +13,14 @@ class IDataLoader(ABC):
 
     @staticmethod
     @abstractmethod
-    def can_load(filepath: str) -> bool:
-        return False
-
-    @staticmethod
-    @abstractmethod
     def feature_signature() -> List[
-        Union[PacketFeature, HostFeature, FlowFeature, PredictionField]
+        IFeature
     ]:
         return []
 
     @abstractmethod
     def get_features(self) -> Generator[
-        Dict[Union[PacketFeature, HostFeature, FlowFeature, PredictionField], Any],
+        Dict[IFeature, Any],
         None,
         None,
     ]:
@@ -36,7 +31,7 @@ class IDataLoader(ABC):
 
     @abstractmethod
     def get_metadata(self) -> Generator[
-        Dict[Union[PacketFeature, HostFeature, FlowFeature, PredictionField], Any],
+        Dict[IFeature, Any],
         None,
         None,
     ]:

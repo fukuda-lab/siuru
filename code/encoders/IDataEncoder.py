@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Generator, Dict, Union, Any
 
 from prediction_output import PredictionField
-from preprocessors.common import PacketFeature, HostFeature, FlowFeature
+from common.features import IFeature
 
 
 class IDataEncoder(ABC):
@@ -14,7 +14,7 @@ class IDataEncoder(ABC):
     def encode(
         self,
         data: Generator[
-            Dict[Union[PacketFeature, HostFeature, FlowFeature, PredictionField], Any],
+            Dict[IFeature, Any],
             None,
             None,
         ],

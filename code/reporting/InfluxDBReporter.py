@@ -3,7 +3,7 @@ from influxdb_client import Point
 from influxdb_client.client.exceptions import InfluxDBError
 
 from prediction_output import Prediction, PredictionField
-from preprocessors.common import PacketFeature
+from common.features import PacketFeature
 
 import pipeline_logger
 

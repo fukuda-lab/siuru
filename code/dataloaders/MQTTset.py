@@ -4,11 +4,11 @@ from typing import List, Union, Generator, Dict, Any, Tuple
 from dataloaders.IDataLoader import IDataLoader
 from prediction_output import PredictionField
 from preprocessors.PacketProcessor import PacketProcessor
-from preprocessors.common import (
+from common.features import (
     PacketFeature,
     HostFeature,
     FlowFeature,
-    PacketData,
+    CppPacketData,
 )
 
 from pipeline_logger import PipelineLogger
@@ -47,7 +47,7 @@ class MQTTsetLoader(IDataLoader):
         )
 
     def get_features(self) -> Generator[
-        Dict[Union[PacketFeature, HostFeature, FlowFeature, PredictionField], Any],
+        Dict[IFeature, Any],
         None,
         None,
     ]:
@@ -63,12 +63,12 @@ class MQTTsetLoader(IDataLoader):
 
         preprocessor = PacketProcessor()
         for packet_features in process.stdout.readlines():
-            yield preprocessor.process(PacketData(packet_features))
+            yield preprocessor.process(CppPacketData(packet_features))
 
     def get_metadata(
         self, **kwargs
     ) -> Generator[
-        Dict[Union[PacketFeature, HostFeature, FlowFeature, PredictionField], Any],
+        Dict[IFeature, Any],
         None,
         None,
     ]:
@@ -89,7 +89,7 @@ class MQTTsetLoader(IDataLoader):
         overall_packet_counter = 0
 
         for packet_features in process.stdout.readlines():
-            p = PacketData(packet_features)
+            p = CppPacketData(packet_features)
             if not p.is_valid:
                 continue
             overall_packet_counter += 1
@@ -108,7 +108,7 @@ class MQTTsetLoader(IDataLoader):
 
     @staticmethod
     def feature_signature() -> List[
-        Union[PacketFeature, HostFeature, FlowFeature, PredictionField]
+        IFeature
     ]:
         return PacketProcessor.signature()
 

@@ -2,6 +2,8 @@ import os
 from abc import ABC, abstractmethod
 from typing import Optional
 
+from dataloaders import IDataLoader
+
 
 class IAnomalyDetectionModel(ABC):
     def __init__(self,
@@ -36,9 +38,9 @@ class IAnomalyDetectionModel(ABC):
             os.mkdir(os.path.join(self.store_file, ".."))
 
     @abstractmethod
-    def train(self, **kwargs):
+    def train_with_source(self, data_source: IDataLoader, **kwargs):
         pass
 
     @abstractmethod
-    def predict(self, **kwargs):
+    def predict_from_source(self, data_source: IDataLoader, **kwargs):
         pass

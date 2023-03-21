@@ -3,7 +3,7 @@ from typing import List, Union, Generator, Dict, Any
 
 from dataloaders.IDataLoader import IDataLoader
 from prediction_output import PredictionField
-from preprocessors.common import PacketFeature, HostFeature, FlowFeature
+from common.features import IFeature
 
 from pipeline_logger import PipelineLogger
 
@@ -26,7 +26,7 @@ class MawiLoaderDummy(IDataLoader):
     def preprocess(
         self, **kwargs
     ) -> Generator[
-        Dict[Union[PacketFeature, HostFeature, FlowFeature, PredictionField], Any],
+        Dict[IFeature, Any],
         None,
         None,
     ]:
@@ -54,7 +54,7 @@ class MawiLoaderDummy(IDataLoader):
 
     @staticmethod
     def feature_signature() -> List[
-        Union[PacketFeature, HostFeature, FlowFeature, PredictionField]
+        IFeature
     ]:
         return []
 

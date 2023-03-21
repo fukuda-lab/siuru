@@ -4,14 +4,14 @@ import numpy as np
 
 from encoders.IDataEncoder import IDataEncoder
 from prediction_output import PredictionField
-from preprocessors.common import HostFeature, PacketFeature, FlowFeature
+from common.features import IFeature
 
 
 class DefaultEncoder(IDataEncoder):
     def encode(
         self,
         data: Generator[
-            Dict[Union[PacketFeature, HostFeature, FlowFeature, PredictionField], Any],
+            Dict[IFeature, Any],
             None,
             None,
         ],
