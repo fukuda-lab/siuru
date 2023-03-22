@@ -8,10 +8,19 @@ from common.features import IFeature, PacketFeature
 from preprocessors.IPreprocessor import IPreprocessor
 
 
-class CppPacketData(IPreprocessor):
+class CppPacketProcessor(IPreprocessor):
     """
     Helper class to map C++ feature extractor output to features.
     """
+
+    input_pattern = re.compile(
+        r"(?P<srcip>\S+)\s"
+        r"(?P<dstip>\S+)\s"
+        r"(?P<srcport>\S+)\s"
+        r"(?P<dstport>\S+)\s"
+        r"(?P<proto>\S+)\s"
+        r"(?P<features>{.+})"
+    )
 
     @staticmethod
     def input_signature() -> List[IFeature]:
@@ -37,36 +46,30 @@ class CppPacketData(IPreprocessor):
             PacketFeature.TCP_FIN_FLAG,
         ]
 
-    input_pattern = re.compile(
-        r"(?P<srcip>\S+)\s"
-        r"(?P<dstip>\S+)\s"
-        r"(?P<srcport>\S+)\s"
-        r"(?P<dstport>\S+)\s"
-        r"(?P<proto>\S+)\s"
-        r"(?P<features>{.+})"
-    )
-
-    def process(self, input_data: Dict[IFeature, Any]):
-        matched_input = CppPacketData.input_pattern.match(
-            input_data[PacketFeature.CPP_FEATURE_STRING]
+    def process(self, features: Dict[IFeature, Any]):
+        matched_input = CppPacketProcessor.input_pattern.match(
+            features[PacketFeature.CPP_FEATURE_STRING]
         )
+        if not matched_input:
+            return
 
-        if matched_input:
-            features = json.loads(matched_input.group("features"))
-            return {
-                PacketFeature.IP_SOURCE_ADDRESS: matched_input.group("srcip"),
-                PacketFeature.IP_DESTINATION_ADDRESS: matched_input.group("dstip"),
-                PacketFeature.IP_SOURCE_PORT: matched_input.group("srcport"),
-                PacketFeature.IP_DESTINATION_PORT: matched_input.group("dstport"),
-                PacketFeature.PROTOCOL: matched_input.group("proto"),
-                PacketFeature.TIMESTAMP: pandas.to_datetime(features["ts"], unit="us"),
-                PacketFeature.IP_PACKET_SIZE: features["ip_len"],
-                PacketFeature.TCP_CWR_FLAG: features["tcp_flags"][0],
-                PacketFeature.TCP_ECE_FLAG: features["tcp_flags"][1],
-                PacketFeature.TCP_URG_FLAG: features["tcp_flags"][2],
-                PacketFeature.TCP_ACK_FLAG: features["tcp_flags"][3],
-                PacketFeature.TCP_PSH_FLAG: features["tcp_flags"][4],
-                PacketFeature.TCP_RST_FLAG: features["tcp_flags"][5],
-                PacketFeature.TCP_SYN_FLAG: features["tcp_flags"][6],
-                PacketFeature.TCP_FIN_FLAG: features["tcp_flags"][7],
-            }
+        cpp_features = json.loads(matched_input.group("features"))
+        features[PacketFeature.IP_SOURCE_ADDRESS] = matched_input.group("srcip")
+        features[PacketFeature.IP_DESTINATION_ADDRESS] = matched_input.group("dstip")
+        features[PacketFeature.IP_SOURCE_PORT] = matched_input.group("srcport")
+        features[PacketFeature.IP_DESTINATION_PORT] = matched_input.group("dstport")
+        features[PacketFeature.PROTOCOL] = matched_input.group("proto")
+        features[PacketFeature.TIMESTAMP] = pandas.to_datetime(
+            cpp_features["ts"], unit="us"
+        )
+        features[PacketFeature.IP_PACKET_SIZE] = cpp_features["ip_len"]
+        features[PacketFeature.TCP_CWR_FLAG] = cpp_features["tcp_flags"][0]
+        features[PacketFeature.TCP_ECE_FLAG] = cpp_features["tcp_flags"][1]
+        features[PacketFeature.TCP_URG_FLAG] = cpp_features["tcp_flags"][2]
+        features[PacketFeature.TCP_ACK_FLAG] = cpp_features["tcp_flags"][3]
+        features[PacketFeature.TCP_PSH_FLAG] = cpp_features["tcp_flags"][4]
+        features[PacketFeature.TCP_RST_FLAG] = cpp_features["tcp_flags"][5]
+        features[PacketFeature.TCP_SYN_FLAG] = cpp_features["tcp_flags"][6]
+        features[PacketFeature.TCP_FIN_FLAG] = cpp_features["tcp_flags"][7]
+
+        return features

@@ -11,6 +11,9 @@ class IDataLoader(ABC):
     Generic interface for data loading modules to implement.
     """
 
+    def __init__(self, **kwargs):
+        pass
+
     @staticmethod
     @abstractmethod
     def feature_signature() -> List[IFeature]:
@@ -24,19 +27,6 @@ class IDataLoader(ABC):
         Yields a dictionary of preprocessed features per sample.
         """
         yield {}
-
-    @abstractmethod
-    def get_metadata(
-        self,
-    ) -> Generator[Dict[IFeature, Any], None, None,]:
-        """
-        Yields a dictionary of metadata per sample.
-        """
-        yield {}
-
-    @abstractmethod
-    def get_labels(self) -> Generator[Any, None, None]:
-        yield []
 
     @staticmethod
     def _get_path_relative_to_data_dir(filepath: str) -> Union[str, None]:

@@ -2,6 +2,5 @@
 # ``from dataloaders import *``
 
 from .IDataLoader import IDataLoader
-from .Mawi import MawiLoaderDummy
-from .MQTTset import MQTTsetLoader
+from .PcapFileLoader import PcapFileLoader
 from .PacketSniffer import PacketSniffer

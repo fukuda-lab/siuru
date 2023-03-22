@@ -2,15 +2,15 @@ import argparse
 import itertools
 import json
 import os
-import subprocess
 import time
-from datetime import datetime
 from typing import List
 
 from jinja2 import Template
 
+from common.functions import time_now, project_root, git_tag
 from dataloaders import *
 from models import *
+from preprocessors import *
 
 from encoders.DefaultEncoder import DefaultEncoder
 from pipeline_logger import PipelineLogger
@@ -39,25 +39,6 @@ def main():
     config_path = os.path.abspath(args.config_path)
     assert os.path.exists(config_path), "Config file not found!"
 
-    def git_tag():
-        get_git_tag_cmd = ["git", "rev-parse", "--short", "HEAD"]
-        tag_result = subprocess.run(get_git_tag_cmd, capture_output=True)
-        if tag_result.returncode == 0:
-            tag = tag_result.stdout.decode("utf-8").strip()
-            check_modifications_cmd = ["git", "diff", "--quiet", "--exit-code"]
-            mod_result = subprocess.run(check_modifications_cmd)
-            if mod_result.returncode != 0:
-                tag += "-edited"
-        else:
-            tag = "undefined"
-        return tag
-
-    def time_now():
-        return datetime.now().strftime("%Y-%m-%d-%H:%M:%S")
-
-    def project_root():
-        return os.path.abspath(os.path.join(__file__, ".."))
-
     log.debug(f"Loading configuration from: {config_path}")
     with open(config_path) as config_file:
         template = Template(config_file.read())
@@ -68,27 +49,27 @@ def main():
     assert configuration, "Could not load configuration file!"
     log.debug("Configuration loaded!")
 
-    feature_generators_list = []
-    metadata_generators_list = []
-    label_generators_list = []
-    feature_list = []
-
     for data_source in configuration["DATA_SOURCES"]:
-        loader_name = data_source["loader"]
+        loader_name = data_source["loader"]["class"]
         loader_class = globals()[loader_name]
-        loader: IDataLoader = loader_class(**data_source)
+        log.info(f"Adding {loader_class.__name__} to pipeline.")
+        loader: IDataLoader = loader_class(**data_source["loader"]["kwargs"])
+        feature_stream = loader.get_features()
 
-        feature_generators_list.append(loader.get_features())
-        metadata_generators_list.append(loader.get_metadata())
-        label_generators_list.append(loader.get_labels())
+        for preprocessor_specification in data_source["preprocessors"]:
+            preprocessor_name = preprocessor_specification["class"]
+            preprocessor_class = globals()[preprocessor_name]
+            log.info(f"Adding {preprocessor_class.__name__} to pipeline.")
+            preprocessor: IPreprocessor = preprocessor_class(
+                **preprocessor_specification["kwargs"]
+            )
+            feature_stream = [preprocessor.process(f) for f in feature_stream]
 
-        if not feature_list:
-            # TODO determine feature list as union from different data loaders,
-            #  not just first signature.
-            feature_list = loader.feature_signature()
-
-        log.info(f"Adding {loader.__name__} to pipeline.")
-        log.debug(f"File to be loaded: {data_source['path']}")
+    feature_count = 0
+    for _ in feature_stream:
+        feature_count += 1
+    log.info(feature_count)
+    exit(1)
 
     model_instances: List[IAnomalyDetectionModel] = []
 

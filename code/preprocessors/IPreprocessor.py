@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List, Dict
+from typing import List, Dict, Any
 
 from common.features import IFeature
 
@@ -16,5 +16,5 @@ class IPreprocessor(ABC):
         pass
 
     @abstractmethod
-    def process(self, input_data: Dict[IFeature]) -> Dict[IFeature]:
+    def process(self, features: Dict[IFeature, Any]) -> Dict[IFeature, Any]:
         pass
