@@ -14,13 +14,16 @@ class MLPAutoEncoderModel(IAnomalyDetectionModel):
     """
     Multi-layer perceptron (MLP) based autoencoder.
     """
-    def __init__(self,
-                 model_name,
-                 use_existing_model=False,
-                 skip_saving_model=False,
-                 model_storage_base_path=None,
-                 model_relative_path=None,
-                 **kwargs):
+
+    def __init__(
+        self,
+        model_name,
+        use_existing_model=False,
+        skip_saving_model=False,
+        model_storage_base_path=None,
+        model_relative_path=None,
+        **kwargs,
+    ):
 
         super().__init__(
             model_name,
@@ -28,26 +31,31 @@ class MLPAutoEncoderModel(IAnomalyDetectionModel):
             skip_saving_model,
             model_storage_base_path,
             model_relative_path,
-            **kwargs)
+            **kwargs,
+        )
 
         # TODO add configuration options for the random forest.
         self.model_instance = None
 
     def train(
-            self,
-            true_features: Generator[np.array, None, None],
-            false_features: Generator[np.array, None, None],
-            feature_names: Optional[List[str]] = None,
-            **kwargs
+        self,
+        true_features: Generator[np.array, None, None],
+        false_features: Generator[np.array, None, None],
+        feature_names: Optional[List[str]] = None,
+        **kwargs,
     ):
         log.info("Training an MLP autoencoder.")
         # TODO Find ways to work with the generators to save memory.
         true_feat_list = list(true_features)
         false_feat_list = list(false_features)
         log.info(f"Number of true (target) samples: {len(true_feat_list)}")
-        log.info(f"Number of false (anomalous) samples for testing: {len(false_feat_list)}")
+        log.info(
+            f"Number of false (anomalous) samples for testing: {len(false_feat_list)}"
+        )
 
-        X_train, X_test = train_test_split(true_feat_list, test_size=0.1, random_state=8)
+        X_train, X_test = train_test_split(
+            true_feat_list, test_size=0.1, random_state=8
+        )
         ae = MLPRegressor(
             alpha=1e-15,
             hidden_layer_sizes=[25, 50, 25, 2, 25, 50, 25],

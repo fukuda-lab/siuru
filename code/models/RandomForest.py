@@ -20,20 +20,23 @@ log = logging.getLogger()
 
 
 class RandomForestModel(IAnomalyDetectionModel):
-    def __init__(self,
-                 model_name,
-                 use_existing_model=False,
-                 skip_saving_model=False,
-                 model_storage_base_path=None,
-                 model_relative_path=None,
-                 **kwargs):
+    def __init__(
+        self,
+        model_name,
+        use_existing_model=False,
+        skip_saving_model=False,
+        model_storage_base_path=None,
+        model_relative_path=None,
+        **kwargs,
+    ):
 
         super().__init__(
             model_name,
             use_existing_model,
             skip_saving_model,
             model_storage_base_path,
-            model_relative_path)
+            model_relative_path,
+        )
 
         # TODO add configuration options for the random forest.
         self.model_instance = None
@@ -43,7 +46,7 @@ class RandomForestModel(IAnomalyDetectionModel):
         features: Generator[np.array, None, None],
         labels: Generator[Any, None, None],
         feature_names: Optional[List[str]] = None,
-        **kwargs
+        **kwargs,
     ):
         log.info("Training a random forest classifier.")
         X_train, X_test, y_train, y_test = train_test_split(
@@ -65,8 +68,10 @@ class RandomForestModel(IAnomalyDetectionModel):
         if feature_names:
             log.debug("Feature importances:")
             for idx, name in enumerate(feature_names):
-                log.debug(f"{name : <40} "
-                          f"{self.model_instance.feature_importances_[idx]:6.4f}")
+                log.debug(
+                    f"{name : <40} "
+                    f"{self.model_instance.feature_importances_[idx]:6.4f}"
+                )
 
         if not self.skip_saving_model:
             dump(self.model_instance, self.store_file)

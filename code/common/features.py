@@ -75,7 +75,9 @@ class PredictionField(str, enum.Enum):
 
 # IFeature is one component of a data point throughout the pipeline,
 # including processing results and metadata.
-IFeature = NewType("IFeature", Union[PacketFeature, HostFeature, FlowFeature, PredictionField])
+IFeature = NewType(
+    "IFeature", Union[PacketFeature, HostFeature, FlowFeature, PredictionField]
+)
 
 
 def flow_identifier(input_data: (Dict[IFeature, Any])):
@@ -84,5 +86,5 @@ def flow_identifier(input_data: (Dict[IFeature, Any])):
         input_data[PacketFeature.IP_DESTINATION_ADDRESS],
         input_data[PacketFeature.IP_SOURCE_PORT],
         input_data[PacketFeature.IP_DESTINATION_PORT],
-        input_data[PacketFeature.PROTOCOL]
+        input_data[PacketFeature.PROTOCOL],
     )

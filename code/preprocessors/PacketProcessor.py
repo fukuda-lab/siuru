@@ -4,7 +4,13 @@ from typing import Tuple
 
 from pandas import Timestamp, Timedelta
 
-from common.features import IFeature, flow_identifier, PacketFeature, HostFeature, FlowFeature
+from common.features import (
+    IFeature,
+    flow_identifier,
+    PacketFeature,
+    HostFeature,
+    FlowFeature,
+)
 from preprocessors.IPreprocessor import IPreprocessor
 
 
@@ -78,7 +84,6 @@ class HostFeatureProcessor(IPreprocessor):
             HostFeature.AVG_INTER_ARRIVAL_TIME: host_avg_inter_arrival_time.value,
             HostFeature.CONNECTION_DURATION: host_connection_duration.value,
         }
-
 
     @staticmethod
     def input_signature():
@@ -166,12 +171,8 @@ class PacketProcessor:
             )
 
         return {
-            FlowFeature.RECEIVED_PACKET_COUNT: self.packet_count_by_flow[
-                flow_id
-            ],
-            FlowFeature.SUM_PACKET_SIZE: self.packet_size_sum_by_flow[
-                flow_id
-            ],
+            FlowFeature.RECEIVED_PACKET_COUNT: self.packet_count_by_flow[flow_id],
+            FlowFeature.SUM_PACKET_SIZE: self.packet_size_sum_by_flow[flow_id],
             FlowFeature.AVG_PACKET_SIZE: self.packet_size_sum_by_flow[flow_id]
             / self.packet_count_by_flow[flow_id],
             FlowFeature.LAST_INTER_ARRIVAL_TIME: flow_last_inter_arrival_time.value,

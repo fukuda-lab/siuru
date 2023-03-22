@@ -25,11 +25,7 @@ class MawiLoaderDummy(IDataLoader):
 
     def preprocess(
         self, **kwargs
-    ) -> Generator[
-        Dict[IFeature, Any],
-        None,
-        None,
-    ]:
+    ) -> Generator[Dict[IFeature, Any], None, None,]:
 
         log = PipelineLogger.get_logger()
 
@@ -53,9 +49,7 @@ class MawiLoaderDummy(IDataLoader):
         log.info(f"[MQTTsetLoader] Extracted and processed {packet_counter} packets.")
 
     @staticmethod
-    def feature_signature() -> List[
-        IFeature
-    ]:
+    def feature_signature() -> List[IFeature]:
         return []
 
     def get_labels(self, **kwargs) -> Generator[Any, None, None]:

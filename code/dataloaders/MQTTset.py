@@ -46,11 +46,9 @@ class MQTTsetLoader(IDataLoader):
             in MQTTsetLoader.SUPPORTED_FILES
         )
 
-    def get_features(self) -> Generator[
-        Dict[IFeature, Any],
-        None,
-        None,
-    ]:
+    def get_features(
+        self,
+    ) -> Generator[Dict[IFeature, Any], None, None,]:
 
         log = PipelineLogger.get_logger()
 
@@ -67,11 +65,7 @@ class MQTTsetLoader(IDataLoader):
 
     def get_metadata(
         self, **kwargs
-    ) -> Generator[
-        Dict[IFeature, Any],
-        None,
-        None,
-    ]:
+    ) -> Generator[Dict[IFeature, Any], None, None,]:
 
         log = PipelineLogger.get_logger()
 
@@ -107,9 +101,7 @@ class MQTTsetLoader(IDataLoader):
         )
 
     @staticmethod
-    def feature_signature() -> List[
-        IFeature
-    ]:
+    def feature_signature() -> List[IFeature]:
         return PacketProcessor.signature()
 
     def get_labels(self, **kwargs) -> Generator[Any, None, None]:

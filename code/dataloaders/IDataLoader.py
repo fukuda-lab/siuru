@@ -13,28 +13,22 @@ class IDataLoader(ABC):
 
     @staticmethod
     @abstractmethod
-    def feature_signature() -> List[
-        IFeature
-    ]:
+    def feature_signature() -> List[IFeature]:
         return []
 
     @abstractmethod
-    def get_features(self) -> Generator[
-        Dict[IFeature, Any],
-        None,
-        None,
-    ]:
+    def get_features(
+        self,
+    ) -> Generator[Dict[IFeature, Any], None, None,]:
         """
         Yields a dictionary of preprocessed features per sample.
         """
         yield {}
 
     @abstractmethod
-    def get_metadata(self) -> Generator[
-        Dict[IFeature, Any],
-        None,
-        None,
-    ]:
+    def get_metadata(
+        self,
+    ) -> Generator[Dict[IFeature, Any], None, None,]:
         """
         Yields a dictionary of metadata per sample.
         """

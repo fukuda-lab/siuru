@@ -132,16 +132,16 @@ def main():
         reporter = None
         labels = list(label_generator)
         if (
-                args.influx_url
-                or args.influx_org
-                or args.influx_token
-                or args.influx_bucket
+            args.influx_url
+            or args.influx_org
+            or args.influx_token
+            or args.influx_bucket
         ):
             assert (
-                    args.influx_url
-                    and args.influx_org
-                    and args.influx_token
-                    and args.influx_bucket
+                args.influx_url
+                and args.influx_org
+                and args.influx_token
+                and args.influx_bucket
             ), "Set InfluxDB index, token and bucket values to activate reporting!"
             reporter = InfluxDBReporter(
                 args.influx_url, args.influx_org, args.influx_token, args.influx_bucket
