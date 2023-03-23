@@ -1,6 +1,6 @@
 import logging
 import os.path
-from typing import Generator, Any, Optional, List, Dict
+from typing import Generator, Any, Optional, List, Dict, Tuple
 import numpy as np
 from joblib import dump, load
 
@@ -32,10 +32,10 @@ class RandomForestModel(IAnomalyDetectionModel):
 
         super().__init__(
             model_name,
-            use_existing_model,
-            skip_saving_model,
-            model_storage_base_path,
-            model_relative_path,
+            use_existing_model=use_existing_model,
+            skip_saving_model=skip_saving_model,
+            model_storage_base_path=model_storage_base_path,
+            model_relative_path=model_relative_path,
         )
 
         # TODO add configuration options for the random forest.
@@ -43,35 +43,38 @@ class RandomForestModel(IAnomalyDetectionModel):
 
     def train(
         self,
-        features: Generator[np.array, None, None],
-        labels: Generator[Any, None, None],
-        feature_names: Optional[List[str]] = None,
+        data: Generator[Tuple[np.array, Any], None, None],
         **kwargs,
     ):
         log.info("Training a random forest classifier.")
-        X_train, X_test, y_train, y_test = train_test_split(
-            list(features), list(labels), test_size=0.33, random_state=8
-        )
+
+        f = []
+        l = []
+
+        for features, label in data:
+            f.append(features)
+            l.append(label)
+
         self.model_instance = RandomForestClassifier()
-        self.model_instance.fit(X_train, y_train)
+        self.model_instance.fit(f, l)
 
-        y_pred = self.model_instance.predict(X_test)
-
-        cnf_matrix = confusion_matrix(y_test, y_pred)
-        log.debug(f"\nConfusion matrix:\n\n{cnf_matrix}\n")
-
-        log.info(f"Accuracy: {accuracy_score(y_test, y_pred)}")
-        log.info(f"Precision: {precision_score(y_test, y_pred, average='macro')}")
-        log.info(f"Recall: {recall_score(y_test, y_pred, average='macro')}")
-        log.info(f"F1 score: {f1_score(y_test, y_pred, average='macro')}")
-
-        if feature_names:
-            log.debug("Feature importances:")
-            for idx, name in enumerate(feature_names):
-                log.debug(
-                    f"{name : <40} "
-                    f"{self.model_instance.feature_importances_[idx]:6.4f}"
-                )
+        # y_pred = self.model_instance.predict(X_test)
+        #
+        # cnf_matrix = confusion_matrix(y_test, y_pred)
+        # log.debug(f"\nConfusion matrix:\n\n{cnf_matrix}\n")
+        #
+        # log.info(f"Accuracy: {accuracy_score(y_test, y_pred)}")
+        # log.info(f"Precision: {precision_score(y_test, y_pred, average='macro')}")
+        # log.info(f"Recall: {recall_score(y_test, y_pred, average='macro')}")
+        # log.info(f"F1 score: {f1_score(y_test, y_pred, average='macro')}")
+        #
+        # if feature_names:
+        #     log.debug("Feature importances:")
+        #     for idx, name in enumerate(feature_names):
+        #         log.debug(
+        #             f"{name : <40} "
+        #             f"{self.model_instance.feature_importances_[idx]:6.4f}"
+        #         )
 
         if not self.skip_saving_model:
             dump(self.model_instance, self.store_file)

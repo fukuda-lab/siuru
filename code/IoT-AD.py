@@ -9,10 +9,11 @@ from jinja2 import Template
 
 from common.functions import time_now, project_root, git_tag
 from dataloaders import *
+from encoders.IDataEncoder import IDataEncoder
 from models import *
 from preprocessors import *
+from encoders import *
 
-from encoders.DefaultEncoder import DefaultEncoder
 from pipeline_logger import PipelineLogger
 from prediction_output import Prediction
 from reporting.InfluxDBReporter import InfluxDBReporter
@@ -49,12 +50,14 @@ def main():
     assert configuration, "Could not load configuration file!"
     log.debug("Configuration loaded!")
 
+    feature_stream = []
+
     for data_source in configuration["DATA_SOURCES"]:
         loader_name = data_source["loader"]["class"]
         loader_class = globals()[loader_name]
         log.info(f"Adding {loader_class.__name__} to pipeline.")
         loader: IDataLoader = loader_class(**data_source["loader"]["kwargs"])
-        feature_stream = loader.get_features()
+        new_feature_stream = loader.get_features()
 
         for preprocessor_specification in data_source["preprocessors"]:
             preprocessor_name = preprocessor_specification["class"]
@@ -63,55 +66,33 @@ def main():
             preprocessor: IPreprocessor = preprocessor_class(
                 **preprocessor_specification["kwargs"]
             )
-            feature_stream = preprocessor.process(feature_stream)
+            new_feature_stream = preprocessor.process(new_feature_stream)
 
-    feature_count = 0
-    for _ in feature_stream:
-        feature_count += 1
-    log.info(feature_count)
-    exit(1)
+        feature_stream = itertools.chain(feature_stream, new_feature_stream)
 
-    model_instances: List[IAnomalyDetectionModel] = []
+    model_specification = configuration["MODEL"]
+    # Initialize model from class name.
+    model_name = model_specification["class"]
+    model_class = globals()[model_name]
+    model_instance: IAnomalyDetectionModel = model_class(**model_specification)
 
-    for model in configuration["MODELS"]:
-        # Initialize model from class name.
-        model_name = model["module"]
-        model_class = globals()[model_name]
-        model_instance: IAnomalyDetectionModel = model_class()
-        model_instances.append(model_instance)
+    encoder_name = model_specification["encoder"]["class"]
+    encoder_class = globals()[encoder_name]
+    encoder_instance: IDataEncoder = encoder_class(**model_specification["encoder"]["kwargs"])
 
-    feature_generator = itertools.chain.from_iterable(feature_generators_list)
-    metadata_generator = itertools.chain.from_iterable(metadata_generators_list)
-    label_generator = itertools.chain.from_iterable(label_generators_list)
-
-    # Pick encoding -- there is only one for now.
     log.info("Encoding features.")
-    e = DefaultEncoder()
-    encoded_feature_generator = e.encode(feature_generator)
+    encoded_feature_generator = encoder_instance.encode(feature_stream)
 
-    # Start models and reporting.
-    for model in model_instances:
-        if not model.use_existing_model:
-            # Train the model.
-            # TODO Define training and test data split.
-            model.train(
-                encoded_feature_generator,
-                label_generator,
-                path_to_store=model_store_file,
-                feature_names=[str(f) for f in feature_list],
-            )
-        if args.autoencoder:
-            # TODO: AE can be trained with anomalous or non-anomalous data, make the choice explicit!
-            feats = list(encoded_feature_generator)
-            labels = list(label_generator)
-            mlp_autoencoder.train(
-                # Training AE to predict non-anomalous data, testing against anomalous.
-                (f for i, f in enumerate(feats) if labels[i] == 0),
-                (f for i, f in enumerate(feats) if labels[i] == 1),
-            )
+    # Start model and reporting.
+    if not model_specification["use_existing_model"]:
+        # Train the model.
+        # TODO Define training and test data split.
+        model_instance.train(
+            encoded_feature_generator,
+            path_to_store=model_instance.store_file
+        )
     else:  # Prediction time!
         reporter = None
-        labels = list(label_generator)
         if (
             args.influx_url
             or args.influx_org

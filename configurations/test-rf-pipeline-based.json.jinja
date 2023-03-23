@@ -19,36 +19,37 @@
                 {
                     "class": "CppPacketProcessor",
                     "kwargs": {}
-                },
-                {
-                    "class": "FlowFeatureProcessor",
-                    "kwargs": {}
                 }
             ]
         }
     ],
-    "MODELS": [
+    "MODEL":
         {
             "class": "RandomForestModel",
-            "use_existing_model": false,
-            "skip_saving_model": false,
-            "model_name": "{{ timestamp }}-test-rf",
-            "encoder": {
+            "use_existing_model": true,
+            "skip_saving_model": true,
+            "model_name": "2023-03-23-22:12:04-test-rf",
+            "model_storage_base_path": "{{ project_root }}/models",
+            "model_relative_path": "2023-03-23-22:12:04-test-rf/2023-03-23-22:12:04-test-rf.pickle",
+            "encoder":
+            {
                 "class": "DefaultEncoder",
-                "kwargs": {}
-            },
-            "features": [
-                "TODO only for models to be trained. Should support feature selection",
-                "modules instead of hardcoding. After training, save the feature lists",
-                "and validate that the set is available when starting prediction."
-            ]
+                "kwargs": {
+                    "feature_filter": [
+                        "ground_truth",
+                        "ip_size",
+                        "tcp_cwr",
+                        "tcp_ece",
+                        "tcp_urg",
+                        "tcp_ack",
+                        "tcp_psh",
+                        "tcp_rst",
+                        "tcp_syn",
+                        "tcp_fin"
+                    ]
+                }
+            }
         },
-        {
-            "class": "RandomForestAD",
-            "model_name": "{{ timestamp }}-test-rf",
-            "use_existing_model": true
-        }
-    ],
     "OUTPUT": [
         {
             "type": "InfluxDBReporter",
@@ -59,6 +60,5 @@
         }
     ],
     "CPP_FEATURE_EXTRACTOR": "{{ project_root }}/cmake-build-debug/pcap-feature-extraction",
-    "MODEL_STORAGE_BASE_PATH": "{{ project_root }}/models",
     "VERSION": "{{ git_tag }}"
 }

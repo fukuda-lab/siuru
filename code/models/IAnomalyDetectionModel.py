@@ -1,6 +1,6 @@
 import os
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Optional, Any
 
 from dataloaders import IDataLoader
 
@@ -22,25 +22,24 @@ class IAnomalyDetectionModel(ABC):
 
         if not self.skip_saving_model:
             assert model_storage_base_path
-            self.model_relative_path = model_relative_path
-            if not self.model_relative_path:
-                self.model_relative_path = os.path.join(
+            if not model_relative_path:
+                model_relative_path = os.path.join(
                     model_name, f"{model_name}.pickle"
                 )
-            self.store_file = os.path.join(model_storage_base_path, model_relative_path)
+        self.store_file = os.path.join(model_storage_base_path, model_relative_path)
 
         if self.use_existing_model and not os.path.exists(self.store_file):
             # The specified model is not available.
             raise RuntimeError(f"No file found under the path: {self.store_file}")
-        elif os.path.exists(self.store_file):
+        elif not self.use_existing_model and os.path.exists(self.store_file):
             raise RuntimeError(f"Model file already exists: {self.store_file}")
-        elif not os.path.exists(os.path.join(self.store_file, "..")):
-            os.mkdir(os.path.join(self.store_file, ".."))
+        elif not os.path.exists(os.path.dirname(self.store_file)):
+            os.mkdir(os.path.dirname(self.store_file))
 
     @abstractmethod
-    def train_with_source(self, data_source: IDataLoader, **kwargs):
+    def train(self, data: Any, **kwargs):
         pass
 
     @abstractmethod
-    def predict_from_source(self, data_source: IDataLoader, **kwargs):
+    def predict(self, data: Any, **kwargs):
         pass

@@ -1,0 +1,63 @@
+{
+    "DATA_SOURCES": [
+        {
+            "type": "dataset",
+            "loader": {
+                "class": "PcapFileLoader",
+                "kwargs": {
+                    "filepath": "{{ project_root }}/data/MQTTset/Data/PCAP/slowite.pcap",
+                    "preprocessor_path": "{{ project_root }}/cmake-build-debug/pcap-feature-extraction"
+                }
+            },
+            "preprocessors": [
+                {
+                    "class": "FileLabelProcessor",
+                    "kwargs": {
+                        "label_value": 1
+                    }
+                },
+                {
+                    "class": "CppPacketProcessor",
+                    "kwargs": {}
+                }
+            ]
+        }
+    ],
+    "MODEL":
+        {
+            "class": "RandomForestModel",
+            "use_existing_model": false,
+            "skip_saving_model": false,
+            "model_name": "{{ timestamp }}-test-rf",
+            "model_storage_base_path": "{{ project_root }}/models",
+            "encoder":
+            {
+                "class": "DefaultEncoder",
+                "kwargs": {
+                    "feature_filter": [
+                        "ground_truth",
+                        "ip_size",
+                        "tcp_cwr",
+                        "tcp_ece",
+                        "tcp_urg",
+                        "tcp_ack",
+                        "tcp_psh",
+                        "tcp_rst",
+                        "tcp_syn",
+                        "tcp_fin"
+                    ]
+                }
+            }
+        },
+    "OUTPUT": [
+        {
+            "type": "InfluxDBReporter",
+            "influx-url": "",
+            "influx-org": "",
+            "influx-bucket": "",
+            "influx-token": ""
+        }
+    ],
+    "CPP_FEATURE_EXTRACTOR": "{{ project_root }}/cmake-build-debug/pcap-feature-extraction",
+    "VERSION": "{{ git_tag }}"
+}
