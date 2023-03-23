@@ -1,6 +1,6 @@
 from typing import Dict, List, Optional, Any
 
-from common.features import IFeature, PredictionField, PacketFeature
+from common.features import IFeature, PredictionField, PacketFeature, FeatureGenerator
 from pipeline_logger import PipelineLogger
 from preprocessors.IPreprocessor import IPreprocessor
 
@@ -42,8 +42,8 @@ class FileLabelProcessor(IPreprocessor):
             self.value = label_value if label_value else None
         log.info(f"Label for data: {self.value}")
 
-    def process(self, features: Dict[IFeature, Any]):
-        if self.value:
-            features[PredictionField.GROUND_TRUTH] = self.value
-
-        return features
+    def process(self, features: FeatureGenerator) -> FeatureGenerator:
+        for f in features:
+            if self.value:
+                f[PredictionField.GROUND_TRUTH] = self.value
+            yield f

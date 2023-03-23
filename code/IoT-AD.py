@@ -63,7 +63,7 @@ def main():
             preprocessor: IPreprocessor = preprocessor_class(
                 **preprocessor_specification["kwargs"]
             )
-            feature_stream = [preprocessor.process(f) for f in feature_stream]
+            feature_stream = preprocessor.process(feature_stream)
 
     feature_count = 0
     for _ in feature_stream:

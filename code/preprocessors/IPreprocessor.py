@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any
 
-from common.features import IFeature
+from common.features import IFeature, FeatureGenerator
 
 
 class IPreprocessor(ABC):
@@ -16,5 +16,5 @@ class IPreprocessor(ABC):
         pass
 
     @abstractmethod
-    def process(self, features: Dict[IFeature, Any]) -> Dict[IFeature, Any]:
+    def process(self, features: FeatureGenerator) -> FeatureGenerator:
         pass

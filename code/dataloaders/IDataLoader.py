@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from typing import List, Union, Generator, Dict, Any
 
 from prediction_output import PredictionField
-from common.features import IFeature
+from common.features import IFeature, FeatureGenerator
 
 
 class IDataLoader(ABC):
@@ -20,9 +20,7 @@ class IDataLoader(ABC):
         return []
 
     @abstractmethod
-    def get_features(
-        self,
-    ) -> Generator[Dict[IFeature, Any], None, None,]:
+    def get_features(self) -> FeatureGenerator:
         """
         Yields a dictionary of preprocessed features per sample.
         """

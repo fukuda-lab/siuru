@@ -1,5 +1,5 @@
 import enum
-from typing import NewType, Union, Dict, Any
+from typing import NewType, Union, Dict, Any, Generator
 
 
 class PacketFeature(str, enum.Enum):
@@ -79,6 +79,8 @@ class PredictionField(str, enum.Enum):
 IFeature = NewType(
     "IFeature", Union[PacketFeature, HostFeature, FlowFeature, PredictionField]
 )
+
+FeatureGenerator = NewType("FeatureGenerator", Generator[Dict[IFeature, Any], None, None])
 
 
 def flow_identifier(input_data: (Dict[IFeature, Any])):
