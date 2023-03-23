@@ -5,8 +5,8 @@
             "loader": {
                 "class": "PcapFileLoader",
                 "kwargs": {
-                    "filepath": "{{ project_root() }}/data/MQTTset/Data/PCAP/slowite.pcap",
-                    "preprocessor_path": "{{ project_root() }}/cmake-build-debug/pcap-feature-extraction"
+                    "filepath": "{{ project_root }}/data/MQTTset/Data/PCAP/slowite.pcap",
+                    "preprocessor_path": "{{ project_root }}/cmake-build-debug/pcap-feature-extraction"
                 }
             },
             "preprocessors": [
@@ -32,8 +32,11 @@
             "class": "RandomForestModel",
             "use_existing_model": false,
             "skip_saving_model": false,
-            "model_name": "{{ timestamp() }}-test-rf",
-            "encoder": "DefaultEncoder",
+            "model_name": "{{ timestamp }}-test-rf",
+            "encoder": {
+                "class": "DefaultEncoder",
+                "kwargs": {}
+            },
             "features": [
                 "TODO only for models to be trained. Should support feature selection",
                 "modules instead of hardcoding. After training, save the feature lists",
@@ -42,7 +45,7 @@
         },
         {
             "class": "RandomForestAD",
-            "model_name": "{{ timestamp() }}-test-rf",
+            "model_name": "{{ timestamp }}-test-rf",
             "use_existing_model": true
         }
     ],
@@ -55,7 +58,7 @@
             "influx-token": ""
         }
     ],
-    "CPP_FEATURE_EXTRACTOR": "{{ project_root() }}/cmake-build-debug/pcap-feature-extraction",
-    "MODEL_STORAGE_BASE_PATH": "{{ project_root() }}/models",
-    "VERSION": "{{ git_tag() }}"
+    "CPP_FEATURE_EXTRACTOR": "{{ project_root }}/cmake-build-debug/pcap-feature-extraction",
+    "MODEL_STORAGE_BASE_PATH": "{{ project_root }}/models",
+    "VERSION": "{{ git_tag }}"
 }

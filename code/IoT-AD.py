@@ -42,9 +42,9 @@ def main():
     log.debug(f"Loading configuration from: {config_path}")
     with open(config_path) as config_file:
         template = Template(config_file.read())
-        template.globals["timestamp"] = time_now
-        template.globals["project_root"] = project_root
-        template.globals["git_tag"] = git_tag
+        template.globals["timestamp"] = time_now()
+        template.globals["project_root"] = project_root()
+        template.globals["git_tag"] = git_tag()
         configuration = json.loads(template.render())
     assert configuration, "Could not load configuration file!"
     log.debug("Configuration loaded!")
