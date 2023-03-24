@@ -2,7 +2,6 @@ import os
 from abc import ABC, abstractmethod
 from typing import List, Union, Generator, Dict, Any
 
-from prediction_output import PredictionField
 from common.features import IFeature, FeatureGenerator
 
 

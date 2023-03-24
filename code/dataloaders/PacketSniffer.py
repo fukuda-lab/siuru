@@ -1,7 +1,6 @@
 from typing import List, Union, Generator, Any, Dict
 
 from dataloaders.IDataLoader import IDataLoader
-from prediction_output import PredictionField
 from common.features import IFeature
 
 

@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import Generator, Dict, Union, Any
+from typing import Generator, Dict, Any, Tuple
 
-from prediction_output import PredictionField
 from common.features import IFeature, FeatureGenerator
 
 
@@ -9,9 +8,15 @@ class IDataEncoder(ABC):
     """
     Generic interface for data encoder modules to implement.
     """
+
     def __init__(self, **kwargs):
         pass
 
     @abstractmethod
-    def encode(self, features: FeatureGenerator, **kwargs) -> Any:
+    def encode(
+        self, features: FeatureGenerator, **kwargs
+    ) -> Generator[Tuple[Dict[IFeature, Any], Any], None, None]:
+        """
+        For each feature, return both the original feature and its encoded version.
+        """
         yield None

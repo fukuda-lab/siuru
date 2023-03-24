@@ -3,20 +3,17 @@ import itertools
 import json
 import os
 import time
-from typing import List
 
 from jinja2 import Template
 
 from common.functions import time_now, project_root, git_tag
 from dataloaders import *
-from encoders.IDataEncoder import IDataEncoder
 from models import *
 from preprocessors import *
 from encoders import *
+from reporting import *
 
 from pipeline_logger import PipelineLogger
-from prediction_output import Prediction
-from reporting.InfluxDBReporter import InfluxDBReporter
 
 log = PipelineLogger.get_logger()
 
@@ -28,11 +25,7 @@ def main():
     parser = argparse.ArgumentParser()
 
     parser.add_argument("-c", "--config-path", type=str, required=True)
-
-    # TODO Add feature selection when you have a lot of free time...
-
-    # Reporting options.
-    parser.add_argument("--influx-token", type=str, required=False)
+    parser.add_argument("--influx-token", type=str, required=False, default="")
 
     log.debug("Parsing arguments.")
     args = parser.parse_args()
@@ -46,6 +39,7 @@ def main():
         template.globals["timestamp"] = time_now()
         template.globals["project_root"] = project_root()
         template.globals["git_tag"] = git_tag()
+        template.globals["influx_token"] = args.influx_token
         configuration = json.loads(template.render())
     assert configuration, "Could not load configuration file!"
     log.debug("Configuration loaded!")
@@ -78,58 +72,52 @@ def main():
 
     encoder_name = model_specification["encoder"]["class"]
     encoder_class = globals()[encoder_name]
-    encoder_instance: IDataEncoder = encoder_class(**model_specification["encoder"]["kwargs"])
+    encoder_instance: IDataEncoder = encoder_class(
+        **model_specification["encoder"]["kwargs"]
+    )
 
     log.info("Encoding features.")
     encoded_feature_generator = encoder_instance.encode(feature_stream)
 
-    # Start model and reporting.
+    # Sanity check - peek at the first sample, print its fields and encoded format.
+    peeker, encoded_feature_generator = itertools.tee(encoded_feature_generator)
+    first_sample = next(peeker)
+    if not first_sample:
+        log.warning("No data in encoded feature stream!")
+    elif len(first_sample) == 2:  # Assure sample matches the intended signature.
+        log.debug(f"Features of the first sample:\n{first_sample[0]}")
+        log.debug(f"Encoded sample: {first_sample[1]}")
+
     if not model_specification["use_existing_model"]:
         # Train the model.
-        # TODO Define training and test data split.
         model_instance.train(
-            encoded_feature_generator,
-            path_to_store=model_instance.store_file
+            encoded_feature_generator, path_to_store=model_instance.store_file
         )
-    else:  # Prediction time!
-        reporter = None
-        if (
-            args.influx_url
-            or args.influx_org
-            or args.influx_token
-            or args.influx_bucket
-        ):
-            assert (
-                args.influx_url
-                and args.influx_org
-                and args.influx_token
-                and args.influx_bucket
-            ), "Set InfluxDB index, token and bucket values to activate reporting!"
-            reporter = InfluxDBReporter(
-                args.influx_url, args.influx_org, args.influx_token, args.influx_bucket
-            )
+    else:
+        # Prediction time!
+        reporter_instances = []
 
-        if args.random_forest:
-            predictor = random_forest.RandomForestModel(model_store_file)
-            count = 0
-            start = time.perf_counter()
-            for sample, metadata in zip(encoded_feature_generator, metadata_generator):
-                # TODO Metadata must be passed depending on data the model was
-                #  trained with... how?
-                model_output = predictor.predict_packet(sample.reshape(1, -1))
-                if reporter:
-                    p = Prediction(
-                        predictor.name, feature_list, sample, metadata, model_output
-                    )
-                    reporter.report(p, "kaiyodai_ship")
+        for output in configuration["OUTPUT"]:
+            reporter_name = output["class"]
+            reporter_class = globals()[reporter_name]
+            reporter_instance = reporter_class(**output)
+            reporter_instances.append(reporter_instance)
+
+        count = 0
+        start = time.perf_counter()
+
+        for sample, encoding in encoded_feature_generator:
+            model_instance.predict(sample, encoding.reshape(1, -1))
+            for reporter_instance in reporter_instances:
+                reporter_instance.report(sample)
                 count += 1
-            end = time.perf_counter()
-            packets_per_second = count / (end - start)
-            log.info(
-                f"Predicted {count} samples in {end - start} seconds ({packets_per_second} packets/s)."
-            )
-        if args.autoencoder:
-            pass
+
+        end = time.perf_counter()
+        packets_per_second = count / (end - start)
+        log.info(
+            f"Predicted {count} samples in {end - start} seconds"
+            f" ({packets_per_second} packets/s)."
+        )
 
 
 if __name__ == "__main__":

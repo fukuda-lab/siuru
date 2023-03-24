@@ -6,7 +6,8 @@ from pandas import Timestamp, Timedelta
 from common.features import (
     IFeature,
     PacketFeature as Packet,
-    HostFeature as Host, FeatureGenerator,
+    HostFeature as Host,
+    FeatureGenerator,
 )
 
 from preprocessors.IPreprocessor import IPreprocessor
@@ -72,13 +73,15 @@ class HostFeatureProcessor(IPreprocessor):
             f[Host.SUM_RECEIVED_PACKET_SIZE] = self.packet_size_sum_from_host[src_ip]
 
             f[Host.AVG_RECEIVED_PACKET_SIZE] = (
-                self.packet_size_sum_from_host[src_ip] / self.packet_count_from_host[src_ip]
+                self.packet_size_sum_from_host[src_ip]
+                / self.packet_count_from_host[src_ip]
             )
 
             f[Host.SENT_PACKET_COUNT] = self.packet_count_to_host[dst_ip]
             f[Host.SUM_SENT_PACKET_SIZE] = self.packet_size_sum_to_host[dst_ip]
             f[Host.AVG_SENT_PACKET_SIZE] = (
-                self.packet_size_sum_from_host[src_ip] / self.packet_count_to_host[dst_ip]
+                self.packet_size_sum_from_host[src_ip]
+                / self.packet_count_to_host[dst_ip]
             )
 
             f[Host.LAST_INTER_ARRIVAL_TIME] = host_last_inter_arrival_time.value

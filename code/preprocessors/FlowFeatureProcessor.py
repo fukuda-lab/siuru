@@ -7,7 +7,8 @@ from common.features import (
     IFeature,
     flow_identifier,
     PacketFeature as Packet,
-    FlowFeature as Flow, FeatureGenerator,
+    FlowFeature as Flow,
+    FeatureGenerator,
 )
 
 from preprocessors.IPreprocessor import IPreprocessor

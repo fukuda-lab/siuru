@@ -52,11 +52,12 @@
         },
     "OUTPUT": [
         {
-            "type": "InfluxDBReporter",
-            "influx-url": "",
-            "influx-org": "",
-            "influx-bucket": "",
-            "influx-token": ""
+            "class": "InfluxDBReporter",
+            "influx_url": "http://localhost:8086",
+            "influx_org": "default",
+            "influx_bucket": "default",
+            "influx_token": "{{ influx_token }}",
+            "measurement_name": "mqttset_slowite"
         }
     ],
     "CPP_FEATURE_EXTRACTOR": "{{ project_root }}/cmake-build-debug/pcap-feature-extraction",

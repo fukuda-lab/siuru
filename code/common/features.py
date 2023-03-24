@@ -80,7 +80,9 @@ IFeature = NewType(
     "IFeature", Union[PacketFeature, HostFeature, FlowFeature, PredictionField]
 )
 
-FeatureGenerator = NewType("FeatureGenerator", Generator[Dict[IFeature, Any], None, None])
+FeatureGenerator = NewType(
+    "FeatureGenerator", Generator[Dict[IFeature, Any], None, None]
+)
 
 
 def flow_identifier(input_data: (Dict[IFeature, Any])):

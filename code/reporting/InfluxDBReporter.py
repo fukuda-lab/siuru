@@ -1,23 +1,37 @@
+from typing import Dict, Any, Optional
+
 import influxdb_client
 from influxdb_client import Point
 from influxdb_client.client.exceptions import InfluxDBError
 
-from prediction_output import Prediction, PredictionField
-from common.features import PacketFeature
+from common.features import PacketFeature, IFeature, PredictionField
 
 import pipeline_logger
-
+from reporting.IReporter import IReporter
 
 log = pipeline_logger.PipelineLogger.get_logger()
 
 
-# TODO Create reporter interface.
-class InfluxDBReporter:
-    def __init__(self, url, org, token, bucket):
-        self.url = url
-        self.org = org
-        self.token = token
-        self.bucket = bucket
+class InfluxDBReporter(IReporter):
+    def __init__(
+        self,
+        influx_url,
+        influx_org,
+        influx_token,
+        influx_bucket,
+        measurement_name: Optional[str] = "anomaly_detection",
+        **kwargs,
+    ):
+
+        if not influx_token:
+            log.error("[InfluxDBReporter] Initialized without a token!")
+            exit(1)
+
+        self.url = influx_url
+        self.org = influx_org
+        self.token = influx_token
+        self.bucket = influx_bucket
+        self.measurement_name = measurement_name
 
         self.client = influxdb_client.InfluxDBClient(
             url=self.url,
@@ -48,25 +62,31 @@ class InfluxDBReporter:
             f"Retryable error occurs for batch: {conf}, data: {data} retry: {exception}"
         )
 
-    def report(self, p: Prediction, measurement_name: str = "anomaly_detection"):
-        point = Point(measurement_name)
-        point.time(p.fields[PacketFeature.TIMESTAMP].isoformat(timespec="nanoseconds"))
-        point.tag(
-            PredictionField.MODEL_NAME.value, p.fields[PredictionField.MODEL_NAME.value]
+    def report(self, features: Dict[IFeature, Any]):
+        p = Point(self.measurement_name)
+        p.time(features[PacketFeature.TIMESTAMP].isoformat(timespec="nanoseconds"))
+        p.tag(PredictionField.MODEL_NAME.value, features[PredictionField.MODEL_NAME])
+        p.field(
+            PredictionField.OUTPUT_BINARY.value, features[PredictionField.OUTPUT_BINARY]
         )
+        p.field(
+            PredictionField.GROUND_TRUTH.value, features[PredictionField.GROUND_TRUTH]
+        )
+
         # TODO Decide on relevant tags, or leave them customizable.
-        # point.tag(PacketFeature.IP_SOURCE_ADDRESS.value, p.fields[PacketFeature.IP_SOURCE_ADDRESS])
-        # point.tag(PacketFeature.IP_SOURCE_PORT.value, p.fields[PacketFeature.IP_SOURCE_PORT])
-        # point.tag(PacketFeature.IP_DESTINATION_ADDRESS.value, p.fields[PacketFeature.IP_DESTINATION_ADDRESS])
-        # point.tag(PacketFeature.IP_DESTINATION_PORT.value, p.fields[PacketFeature.IP_DESTINATION_PORT])
-        # point.tag(PacketFeature.PROTOCOL.value, p.fields[PacketFeature.PROTOCOL])
+        # p.tag(PacketFeature.IP_SOURCE_ADDRESS.value, features[PacketFeature.IP_SOURCE_ADDRESS])
+        # p.tag(PacketFeature.IP_SOURCE_PORT.value, features[PacketFeature.IP_SOURCE_PORT])
+        # p.tag(PacketFeature.IP_DESTINATION_ADDRESS.value, features[PacketFeature.IP_DESTINATION_ADDRESS])
+        # p.tag(PacketFeature.IP_DESTINATION_PORT.value, features[PacketFeature.IP_DESTINATION_PORT])
+        # p.tag(PacketFeature.PROTOCOL.value, features[PacketFeature.PROTOCOL])
 
-        if PredictionField.OUTPUT_BINARY in p.fields:
-            point.field(
-                PredictionField.OUTPUT_BINARY.value,
-                p.fields[PredictionField.OUTPUT_BINARY.value],
-            )
-        else:
-            raise NotImplementedError("TODO: Support other prediction outputs!")
+        self.write_api.write(bucket=self.bucket, org=self.org, record=p)
 
-        self.write_api.write(bucket=self.bucket, org=self.org, record=point)
+    @staticmethod
+    def input_signature():
+        return [
+            PacketFeature.TIMESTAMP,
+            PredictionField.MODEL_NAME,
+            PredictionField.OUTPUT_BINARY,
+            PredictionField.GROUND_TRUTH,
+        ]

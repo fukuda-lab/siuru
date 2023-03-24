@@ -28,9 +28,7 @@ class PcapFileLoader(IDataLoader):
         )
 
         for packet_features in process.stdout.readlines():
-            yield {
-                PacketFeature.CPP_FEATURE_STRING: packet_features
-            }
+            yield {PacketFeature.CPP_FEATURE_STRING: packet_features}
 
     @staticmethod
     def feature_signature() -> List[IFeature]:

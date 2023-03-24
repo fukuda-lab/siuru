@@ -1,6 +1,5 @@
 import logging
-import os.path
-from typing import Generator, Any, Optional, List, Dict, Tuple
+from typing import Generator, Any, Dict, Tuple
 import numpy as np
 from joblib import dump, load
 
@@ -14,6 +13,7 @@ from sklearn.metrics import (
 )
 from sklearn.model_selection import train_test_split
 
+from common.features import IFeature, PredictionField
 from models.IAnomalyDetectionModel import IAnomalyDetectionModel
 
 log = logging.getLogger()
@@ -29,7 +29,7 @@ class RandomForestModel(IAnomalyDetectionModel):
         model_relative_path=None,
         **kwargs,
     ):
-
+        self.model_instance = None
         super().__init__(
             model_name,
             use_existing_model=use_existing_model,
@@ -38,26 +38,24 @@ class RandomForestModel(IAnomalyDetectionModel):
             model_relative_path=model_relative_path,
         )
 
-        # TODO add configuration options for the random forest.
-        self.model_instance = None
-
     def train(
         self,
-        data: Generator[Tuple[np.array, Any], None, None],
+        data: Generator[Tuple[Dict[IFeature, Any], np.ndarray], None, None],
         **kwargs,
     ):
         log.info("Training a random forest classifier.")
 
-        f = []
-        l = []
+        labels = []
+        encoded_features = []
 
-        for features, label in data:
-            f.append(features)
-            l.append(label)
+        for features, encoding in data:
+            labels.append(features[PredictionField.GROUND_TRUTH])
+            encoded_features.append(encoding)
 
         self.model_instance = RandomForestClassifier()
-        self.model_instance.fit(f, l)
+        self.model_instance.fit(encoded_features, labels)
 
+        # TODO Move evaluation functionality into a separate reporter class.
         # y_pred = self.model_instance.predict(X_test)
         #
         # cnf_matrix = confusion_matrix(y_test, y_pred)
@@ -85,5 +83,8 @@ class RandomForestModel(IAnomalyDetectionModel):
     def predict_array(self, X):
         return self.model_instance.predict(X)
 
-    def predict(self, x) -> int:
-        return int(self.model_instance.predict(x)[0])
+    def predict(self, features, encoded_data, **kwargs):
+        features[PredictionField.MODEL_NAME] = self.model_name
+        features[PredictionField.OUTPUT_BINARY] = int(
+            self.model_instance.predict(encoded_data)[0]
+        )
