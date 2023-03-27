@@ -64,11 +64,47 @@ About:
 
 This is the data set used for The Third International Knowledge Discovery and Data Mining Tools Competition, which was held in conjunction with KDD-99 The Fifth International Conference on Knowledge Discovery and Data Mining. The competition task was to build a network intrusion detector, a predictive model capable of distinguishing between bad'' connections, called intrusions or attacks, andgood'' normal connections. This database contains a standard set of data to be audited, which includes a wide variety of intrusions simulated in a military network environment.
 
-# TODO: Kitsune Datasets
+# Kitsune Datasets
 
-Were impossible to download without logging into a Google account, and Google does not want to let me log in while I am in Japan... what the f*** Google.
+https://www.kaggle.com/datasets/ymirsky/network-attack-dataset-kitsune
 
-https://drive.google.com/drive/folders/1kmoWY4poGWfmmVSdSu-r_3Vo84Tu4PyE
+Kitsune Surveillance Network Intrusion Datasets
+
+If you use these datasets, please cite:
+
+Yisroel Mirsky, Tomer Doitshman, Yuval Elovici, and Asaf Shabtai, 
+"Kitsune: An Ensemble of Autoencoders for Online Network Intrusion Detection", 
+Network and Distributed System Security Symposium 2018 (NDSS'18)
+
+### Overview
+
+The are 9 network capture datasets:
+
+	- ARP MitM: ARP Man-in-the-Middle attack between a camera & DVR
+	- SSDP Flood: SSDP Flooding Attack against the DVR Server
+	- OS Scan: NMAP OS Scan of the subnet
+	- Active Wiretap: A bridged Raspberry Pi placed between all cameras and the DVR server
+	- SYN Flooding: A SYN DoS attack against a camera
+	- Fuzzing: A Fuzzing Attack against DVR's webserver's cgi
+	- Video Injection: A MitM video content injection attack into a camera's live stream
+	- SSL Renegotiation: A DoS attack against an SSL enabled camera
+	- Mirai: The initial infection and propagation of the Mirai malware (**on a diffrent [IoT] network**)
+
+For more details on the attacks themselves, please refer to the paper.
+
+### Organization
+
+Each attack dataset is located in a seperate directory.
+
+The directory contains three files:
+	
+\<Attack\>_pcap.pcapng	:	A raw pcap capture of the origional N packets. The packets have been truncated to 200 bytes for privacy reasons.
+	
+\<Attack\>_dataset.csv	:	An N-by-M matrix of M-sized feature vectors, each decribing the packet and the context of that packet's channel (see paper).
+	
+\<Attack\>_labels.csv		:	An N-by-1 vector of 0-1 values which indicate whether each packet in \<Attack\>_pcap.pcapng (and \<Attack\>_dataset.csv) is malicous ('1') or not ('0'). For the Man-in-middle-Attacks, all packets which have passed through the MitM are marked as '1'.
+
+Every attack dataset begins with benign traffic, and then at some point (1) the attacker connects to the network and (2) initiiates the given attack.
 
 # MQTTset
 
