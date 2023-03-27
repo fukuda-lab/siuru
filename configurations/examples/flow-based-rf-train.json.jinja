@@ -1,0 +1,114 @@
+{
+    "DESCRIPTION": [
+        "Train a random forest classifier. slowite and malariaDoS attack data from ",
+        "MQTTset is labeled as 1 and a segment from MQTTset's benign traffic as 0. ",
+        "Uses window-based flow features at 10 ms windows."
+    ],
+    "DATA_SOURCES": [
+        {
+            "type": "dataset",
+            "loader": {
+                "class": "PcapFileLoader",
+                "kwargs": {
+                    "filepath": "{{ project_root }}/data/MQTTset/Data/PCAP/slowite.pcap",
+                    "preprocessor_path": "{{ project_root }}/cmake-build-debug/pcap-feature-extraction"
+                }
+            },
+            "preprocessors": [
+                {
+                    "class": "CppPacketProcessor",
+                    "kwargs": {}
+                },
+                {
+                    "class": "WindowFlowFeatureProcessor",
+                    "kwargs": {
+                        "window_size_ms": 10
+                    }
+                },
+                {
+                    "class": "FileLabelProcessor",
+                    "kwargs": {
+                        "label_value": 1
+                    }
+                }
+            ]
+        },
+        {
+            "type": "dataset",
+            "loader": {
+                "class": "PcapFileLoader",
+                "kwargs": {
+                    "filepath": "{{ project_root }}/data/MQTTset/Data/PCAP/capture_malariaDoS.pcap",
+                    "preprocessor_path": "{{ project_root }}/cmake-build-debug/pcap-feature-extraction"
+                }
+            },
+            "preprocessors": [
+                {
+                    "class": "CppPacketProcessor",
+                    "kwargs": {}
+                },
+                {
+                    "class": "WindowFlowFeatureProcessor",
+                    "kwargs": {
+                        "window_size_ms": 10
+                    }
+                },
+                {
+                    "class": "FileLabelProcessor",
+                    "kwargs": {
+                        "label_value": 1
+                    }
+                }
+            ]
+        },
+        {
+            "type": "dataset",
+            "loader": {
+                "class": "PcapFileLoader",
+                "kwargs": {
+                    "filepath": "{{ project_root }}/data/MQTTset/Data/PCAP/capture_custom_1h.pcap",
+                    "preprocessor_path": "{{ project_root }}/cmake-build-debug/pcap-feature-extraction"
+                }
+            },
+            "preprocessors": [
+                {
+                    "class": "CppPacketProcessor",
+                    "kwargs": {}
+                },
+                {
+                    "class": "WindowFlowFeatureProcessor",
+                    "kwargs": {
+                        "window_size_ms": 10
+                    }
+                },
+                {
+                    "class": "FileLabelProcessor",
+                    "kwargs": {
+                        "label_value": 0
+                    }
+                }
+            ]
+        }
+    ],
+    "MODEL":
+    {
+        "class": "RandomForestModel",
+        "train_new_model": true,
+        "skip_saving_model": false,
+        "model_name": "example-flow-based-rf",
+        "model_storage_base_path": "{{ project_root }}/models",
+        "encoder":
+        {
+            "class": "DefaultEncoder",
+            "kwargs": {
+                "feature_filter": [
+                    "window_flow_pkt_count",
+                    "window_flow_sum_pkt_size",
+                    "window_flow_avg_pkt_size",
+                    "window_flow_inter_arrival_avg"
+                ]
+            }
+        }
+    },
+    "VERSION": "{{ git_tag }}"
+}

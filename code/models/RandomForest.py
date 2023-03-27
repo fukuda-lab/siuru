@@ -23,7 +23,7 @@ class RandomForestModel(IAnomalyDetectionModel):
     def __init__(
         self,
         model_name,
-        use_existing_model=False,
+        train_new_model=True,
         skip_saving_model=False,
         model_storage_base_path=None,
         model_relative_path=None,
@@ -32,7 +32,7 @@ class RandomForestModel(IAnomalyDetectionModel):
         self.model_instance = None
         super().__init__(
             model_name,
-            use_existing_model=use_existing_model,
+            train_new_model=train_new_model,
             skip_saving_model=skip_saving_model,
             model_storage_base_path=model_storage_base_path,
             model_relative_path=model_relative_path,

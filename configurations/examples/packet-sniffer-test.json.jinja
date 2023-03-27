@@ -1,21 +1,21 @@
 {
+    "DESCRIPTION": [
+        "Configuration file mock-up for packet sniffer (not implemented yet)."
+    ],
     "DATA_SOURCES": [
         {
-            "type": "dataset",
+            "type": "interface",
             "loader": {
-                "class": "PcapFileLoader",
+                "class": "PacketSniffer",
                 "kwargs": {
-                    "filepath": "{{ project_root }}/data/MQTTset/Data/PCAP/slowite.pcap",
+                    "tcpdump_options": [
+                        "-c", "10000000", "-G", "60", "-w", "/pcap/packets-%F-%T.pcap",
+                        "\"dst port ${DESTINATION_PORT}\"", "-i", "any", "-Z", "root"
+                    ],
                     "preprocessor_path": "{{ project_root }}/cmake-build-debug/pcap-feature-extraction"
                 }
             },
             "preprocessors": [
-                {
-                    "class": "FileLabelProcessor",
-                    "kwargs": {
-                        "label_value": 1
-                    }
-                },
                 {
                     "class": "CppPacketProcessor",
                     "kwargs": {}
@@ -25,18 +25,16 @@
     ],
     "MODEL":
         {
-            "class": "RandomForestModel",
-            "use_existing_model": true,
+            "class": "MLPAutoEncoder",
+            "train_new_model": false,
             "skip_saving_model": true,
-            "model_name": "2023-03-23-22:12:04-test-rf",
+            "model_name": "packet-sniffer-based-rf",
             "model_storage_base_path": "{{ project_root }}/models",
-            "model_relative_path": "2023-03-23-22:12:04-test-rf/2023-03-23-22:12:04-test-rf.pickle",
             "encoder":
             {
                 "class": "DefaultEncoder",
                 "kwargs": {
                     "feature_filter": [
-                        "ground_truth",
                         "ip_size",
                         "tcp_cwr",
                         "tcp_ece",
@@ -53,13 +51,14 @@
     "OUTPUT": [
         {
             "class": "InfluxDBReporter",
-            "influx_url": "http://localhost:8086",
-            "influx_org": "default",
-            "influx_bucket": "default",
-            "influx_token": "{{ influx_token }}",
-            "measurement_name": "mqttset_slowite"
+            "kwargs": {
+                "measurement_name": "packet-sniffer-rf",
+                "influx_url": "http://localhost:8086",
+                "influx_org": "default",
+                "influx_bucket": "default",
+                "influx_token": "{{ influx_token }}"
+            }
         }
     ],
-    "CPP_FEATURE_EXTRACTOR": "{{ project_root }}/cmake-build-debug/pcap-feature-extraction",
-    "VERSION": "{{ git_tag }}"
+    "VERSION": "{{ git_tag() }}"
 }

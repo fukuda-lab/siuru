@@ -1,5 +1,5 @@
 import enum
-from typing import NewType, Union, Dict, Any, Generator
+from typing import NewType, Union, Dict, Any, Generator, Tuple
 
 
 class PacketFeature(str, enum.Enum):
@@ -52,15 +52,19 @@ class FlowFeature(str, enum.Enum):
     Features related to a flow (src_ip + src_port + dst_ip + dst_port + protocol).
     Generated on-the-fly as packets arrive, so the communication between hosts might
     have not ended yet.
-    TODO Also add features based on time windows here.
     """
 
     RECEIVED_PACKET_COUNT = "flow_pkt_count"
     SUM_PACKET_SIZE = "flow_sum_pkt_size"
     AVG_PACKET_SIZE = "flow_avg_pkt_size"
 
+    WINDOW_RECEIVED_PACKET_COUNT = "window_flow_pkt_count"
+    WINDOW_SUM_PACKET_SIZE = "window_flow_sum_pkt_size"
+    WINDOW_AVG_PACKET_SIZE = "window_flow_avg_pkt_size"
+
     LAST_INTER_ARRIVAL_TIME = "flow_inter_arrival_last"
     AVG_INTER_ARRIVAL_TIME = "flow_inter_arrival_avg"
+    WINDOW_AVG_INTER_ARRIVAL_TIME = "window_flow_inter_arrival_avg"
 
     # Relative to first received packet.
     CONNECTION_DURATION = "flow_conn_timedelta"
@@ -85,7 +89,10 @@ FeatureGenerator = NewType(
 )
 
 
-def flow_identifier(input_data: (Dict[IFeature, Any])):
+FlowIdentifier = NewType("FlowIdentifier", Tuple[str, str, int, int, str])
+
+
+def flow_identifier(input_data: (Dict[IFeature, Any])) -> FlowIdentifier:
     return (
         input_data[PacketFeature.IP_SOURCE_ADDRESS],
         input_data[PacketFeature.IP_DESTINATION_ADDRESS],

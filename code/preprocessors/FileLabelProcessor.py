@@ -35,15 +35,16 @@ class FileLabelProcessor(IPreprocessor):
         label_value: Optional[Any] = None,
     ):
         if label_file:
+            # TODO Allow loading files with labels if some dataset requires it.
             raise NotImplementedError
         if source_file and source_file in FileLabelProcessor.DEFAULT_LABELS:
             self.value = FileLabelProcessor.DEFAULT_LABELS[source_file]
         else:
-            self.value = label_value if label_value else None
+            self.value = label_value
         log.info(f"Label for data: {self.value}")
 
     def process(self, features: FeatureGenerator) -> FeatureGenerator:
         for f in features:
-            if self.value:
+            if self.value is not None:
                 f[PredictionField.GROUND_TRUTH] = self.value
             yield f

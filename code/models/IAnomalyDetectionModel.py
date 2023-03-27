@@ -10,7 +10,7 @@ class IAnomalyDetectionModel(ABC):
     def __init__(
         self,
         model_name: str,
-        use_existing_model: bool = False,
+        train_new_model: bool = True,
         skip_saving_model: bool = False,
         model_storage_base_path: Optional[str] = None,
         model_relative_path: Optional[str] = None,
@@ -18,25 +18,30 @@ class IAnomalyDetectionModel(ABC):
     ):
 
         self.model_name = model_name
-        self.use_existing_model = use_existing_model
+        self.train_new_model = train_new_model
         self.skip_saving_model = skip_saving_model
 
-        if not self.skip_saving_model:
-            assert model_storage_base_path
-            if not model_relative_path:
-                model_relative_path = os.path.join(model_name, f"{model_name}.pickle")
+        assert model_storage_base_path
+        if not model_relative_path:
+            model_relative_path = os.path.join(model_name, f"{model_name}.pickle")
         self.store_file = os.path.join(model_storage_base_path, model_relative_path)
 
-        if not self.use_existing_model and os.path.exists(self.store_file):
+        if self.train_new_model and os.path.exists(self.store_file):
             raise RuntimeError(f"Model file already exists: {self.store_file}")
         elif not os.path.exists(os.path.dirname(self.store_file)):
             os.mkdir(os.path.dirname(self.store_file))
 
-        if self.use_existing_model and not os.path.exists(self.store_file):
+        if not self.train_new_model and not os.path.exists(self.store_file):
             # The specified model is not available.
             raise RuntimeError(f"No file found under the path: {self.store_file}")
-        elif self.use_existing_model:
+        elif not self.train_new_model:
             self.load()
+
+    def save_configuration(self, config: str):
+        config_file_path = os.path.join(os.path.dirname(self.store_file), "config.json")
+        assert not os.path.exists(config_file_path)
+        with open(config_file_path, "w") as f:
+            f.write(config)
 
     @abstractmethod
     def train(

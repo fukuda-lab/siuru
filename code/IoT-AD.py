@@ -88,11 +88,12 @@ def main():
         log.debug(f"Features of the first sample:\n{first_sample[0]}")
         log.debug(f"Encoded sample: {first_sample[1]}")
 
-    if not model_specification["use_existing_model"]:
+    if model_specification["train_new_model"]:
         # Train the model.
         model_instance.train(
             encoded_feature_generator, path_to_store=model_instance.store_file
         )
+        model_instance.save_configuration(json.dumps(configuration, indent=4))
     else:
         # Prediction time!
         reporter_instances = []
@@ -100,7 +101,7 @@ def main():
         for output in configuration["OUTPUT"]:
             reporter_name = output["class"]
             reporter_class = globals()[reporter_name]
-            reporter_instance = reporter_class(**output)
+            reporter_instance = reporter_class(**output["kwargs"])
             reporter_instances.append(reporter_instance)
 
         count = 0
