@@ -97,26 +97,23 @@ pip install -r requirements.txt
 ### Training a model
 
 Refer to the command line hints of ``code/IoT-AD.py`` for information on the available 
-parameters.
+parameters, and the files under ``configurations/examples`` for sample configuration
+files.
 
-The sample command below assumes that we have stored the following:
+The example below assumes that we have stored the following:
 1. data for anomaly detection under 
-    `</project/root>/data/MQTTset/Data/PCAP/slowite.pcap` and
+    `</project/root>/data/MQTTset/Data/PCAP/slowite.pcap`, 
+    `</project/root>/data/MQTTset/Data/PCAP/malariaDoS.pcap` and
     `</project/root>/data/MQTTset/Data/PCAP/capture_custom_1h.pcap` (which is a custom
-    segment from the full MQTTSet normal traffic file, ask me for reference). 
+    segment from the full MQTTSet normal traffic file, ask me for reference)
 2. built the C++ feature extractor using CMake under `</project/root>/cmake-build-debug`
 
-As a result of successful training, we will have a random forest classifier trained
-on both datasets and stored under `</project/root/models/model.pickle>`.
-
-TODO: The data and labels are still somewhat hardcoded, should be a config file.
+As a result of successful training, we will have a random forest classifier stored under `</project/root>/models/example-flow-based-rf/flow-based-rf-train.pickle`.
 
 ```bash
 cd code
 python IoT-AD.py \
--p </project/root>/cmake-build-debug/pcap-feature-extraction \
--f </project/root>/data/MQTTset/Data/PCAP/slowite.pcap \
--t -r -s ../models/model.pickle
+-c </project/root>/configurations/examples/flow-based-rf-train.json.jinja
 ```
 
 ### Running anomaly detection
@@ -125,22 +122,16 @@ Refer to the commandline hint of ``code/IoT-AD.py`` for information on the avail
 parameters.
 
 The sample command below assumes that we have the following:
-1. data for anomaly detection under 
-    `</project/root>/data/MQTTset/Data/PCAP/slowite.pcap`
+1. data for anomaly detection similarly as for training
 2. built the C++ feature extractor using CMake under `</project/root>/cmake-build-debug`
-3. loadable pre-trained model under `</project/root>/models/model.pickle`
-4. InfluxDB configured as seen below, including the generated token
+3. trained and stored the model under `</project/root>/models/example-flow-based-rf/flow-based-rf-train.pickle` (see previous section)
+4. configured InfluxDB as seen below, including the generated token
 
 ```bash
 cd code
 python IoT-AD.py \
--p </project/root>/cmake-build-debug/pcap-feature-extraction \
--f </project/root>/data/MQTTset/Data/PCAP/slowite.pcap \
--r -s ../models/model.pickle \
---influx-url "http://localhost:8086" \
---influx-org "default" \
---influx-bucket "default" \
---influx-token <generated token here>
+-c </project/root>/configurations/examples/flow-based-rf-test.json.jinja \
+--influx-token <token>
 ```
 
 ## Repository structure
@@ -183,6 +174,22 @@ actions based on the anomaly detection output.
 ### code/IoT-AD.py
 
 The entry point to the IoT anomaly detection pipeline.
+
+### configurations
+
+Configuration files, which are required input for the IoT anomaly detection program.
+
+The files are in JSON format and must define three pipeline elements: data source(s),
+ML model, and output. [Jinja](https://palletsprojects.com/p/jinja/) is used to
+support template variables, which the main program will replace with computed values
+during runtime evaluation.
+
+As a reference for the pipeline used to train a ML model, a copy of the processed
+configuration file is stored in the same directory as the model after training.
+
+To distinguish models by their creation date, include the `{{ timestamp }}`
+template variable in the "model_name" field of the configuration file. The model name
+and directory will then include a timestamp from the beginning of program execution.
 
 ### data
 

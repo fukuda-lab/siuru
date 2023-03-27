@@ -3,6 +3,7 @@ import itertools
 import json
 import os
 import time
+from typing import List
 
 from jinja2 import Template
 
@@ -96,7 +97,7 @@ def main():
         model_instance.save_configuration(json.dumps(configuration, indent=4))
     else:
         # Prediction time!
-        reporter_instances = []
+        reporter_instances: List[IReporter] = []
 
         for output in configuration["OUTPUT"]:
             reporter_name = output["class"]
