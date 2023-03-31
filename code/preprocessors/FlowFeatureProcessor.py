@@ -1,11 +1,8 @@
 import time
 from collections import defaultdict
-from typing import Dict, Any, Tuple
-
-from pandas import Timestamp, Timedelta
+from typing import Dict, Tuple
 
 from common.features import (
-    IFeature,
     flow_identifier,
     PacketFeature as Packet,
     FlowFeature as Flow,
@@ -30,20 +27,16 @@ class FlowFeatureProcessor(IPreprocessor):
             Tuple[str, str, int, int, str], int
         ] = defaultdict(lambda: 0)
 
-        self.first_timestamp_by_flow: Dict[
-            Tuple[str, str, int, int, str], Timestamp
-        ] = {}
+        self.first_timestamp_by_flow: Dict[Tuple[str, str, int, int, str], int] = {}
 
-        self.last_timestamp_from_host: Dict[str, Timestamp] = defaultdict(
-            lambda: Timestamp(0)
-        )
+        self.last_timestamp_from_host: Dict[str, int] = defaultdict(lambda: 0)
         self.last_timestamp_by_flow: Dict[
-            Tuple[str, str, int, int, str], Timestamp
-        ] = defaultdict(lambda: Timestamp(0))
+            Tuple[str, str, int, int, str], int
+        ] = defaultdict(lambda: 0)
 
         self.sum_inter_arrival_times_by_flow: Dict[
-            Tuple[str, str, int, int, str], Timedelta
-        ] = defaultdict(lambda: Timedelta(0))
+            Tuple[str, str, int, int, str], int
+        ] = defaultdict(lambda: 0)
 
     def process(self, features: FeatureGenerator) -> FeatureGenerator:
         sum_processing_time = 0
@@ -59,9 +52,9 @@ class FlowFeatureProcessor(IPreprocessor):
 
             if flow_id not in self.first_timestamp_by_flow:
                 # TODO switch to NaN? Needs special handling in decision trees.
-                flow_last_inter_arrival_time = Timedelta(0)
-                flow_avg_inter_arrival_time = Timedelta(0)
-                flow_connection_duration = Timedelta(0)
+                flow_last_inter_arrival_time = 0
+                flow_avg_inter_arrival_time = 0
+                flow_connection_duration = 0
                 self.first_timestamp_by_flow[flow_id] = f[Packet.TIMESTAMP]
             else:
                 flow_last_inter_arrival_time = (
@@ -85,9 +78,9 @@ class FlowFeatureProcessor(IPreprocessor):
                 self.packet_size_sum_by_flow[flow_id]
                 / self.packet_count_by_flow[flow_id]
             )
-            f[Flow.LAST_INTER_ARRIVAL_TIME] = flow_last_inter_arrival_time.value
-            f[Flow.AVG_INTER_ARRIVAL_TIME] = flow_avg_inter_arrival_time.value
-            f[Flow.CONNECTION_DURATION] = flow_connection_duration.value
+            f[Flow.LAST_INTER_ARRIVAL_TIME] = flow_last_inter_arrival_time
+            f[Flow.AVG_INTER_ARRIVAL_TIME] = flow_avg_inter_arrival_time
+            f[Flow.CONNECTION_DURATION] = flow_connection_duration
 
             sum_processing_time += time.process_time_ns() - start_time_ref
             packet_count += 1

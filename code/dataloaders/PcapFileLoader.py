@@ -32,7 +32,9 @@ class PcapFileLoader(IDataLoader):
 
         while True:
             start_time_ref = time.process_time_ns()
-            packet_features = {PacketFeature.CPP_FEATURE_STRING: process.stdout.readline()}
+            packet_features = {
+                PacketFeature.CPP_FEATURE_STRING: process.stdout.readline()
+            }
             sum_processing_time += time.process_time_ns() - start_time_ref
             if packet_features[PacketFeature.CPP_FEATURE_STRING]:
                 yield packet_features
@@ -41,7 +43,6 @@ class PcapFileLoader(IDataLoader):
                 break
 
         report_performance(type(self).__name__, log, packet_count, sum_processing_time)
-
 
     @staticmethod
     def feature_signature() -> List[IFeature]:

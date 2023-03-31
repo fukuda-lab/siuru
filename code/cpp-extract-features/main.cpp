@@ -106,19 +106,29 @@ static void packet_to_features(pcpp::RawPacket* rawPacket, pcpp::PcapLiveDevice*
   auto flag_fin = tcp_layer->getTcpHeader()->finFlag;
 
   auto& TCP_PROTO = "tcp";
-  printf("%s %s %d %d %s {", src_ip.c_str(), dst_ip.c_str(), src_port, dst_port, TCP_PROTO);
+
   // Timestamp (received in nanoseconds, forwarded in milliseconds).
   auto ts_ns = rawPacket->getPacketTimeStamp().tv_sec*1000000000L + rawPacket->getPacketTimeStamp().tv_nsec;
-  printf("\"ts\": %ld, ", ts_ns / 1000);
-  // IP packet length.
-  printf("\"ip_len\": %zu, ", ip_layer->getHeaderLen());
-  // TCP flags.
-  printf("\"tcp_flags\": [%hu, %hu, %hu, %hu, %hu, %hu, %hu, %hu], ",
-         flag_cwr, flag_ece, flag_urg, flag_ack,
-         flag_psh, flag_rst, flag_syn, flag_fin);
-  // TCP segment length.
-  printf("\"tcp_len\": %zu}\n", tcp_layer->getHeaderLen());
 
+  printf(
+    "%s,%s,%d,%d,%s,%ld,%zu,%hu,%hu,%hu,%hu,%hu,%hu,%hu,%hu,%zu\n",
+    src_ip.c_str(),
+    dst_ip.c_str(),
+    src_port,
+    dst_port,
+    TCP_PROTO,
+    ts_ns / 1000,
+    ip_layer->getHeaderLen(),
+    flag_cwr,
+    flag_ece,
+    flag_urg,
+    flag_ack,
+    flag_psh,
+    flag_rst,
+    flag_syn,
+    flag_fin,
+    tcp_layer->getHeaderLen()
+  );
 }
 
 

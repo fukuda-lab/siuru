@@ -22,6 +22,7 @@ class PacketFeature(str, enum.Enum):
     TCP_RST_FLAG = "tcp_rst"
     TCP_SYN_FLAG = "tcp_syn"
     TCP_FIN_FLAG = "tcp_fin"
+    TCP_SEGMENT_SIZE = "tcp_size"
     CPP_FEATURE_STRING = "cpp_feature_string"
     SOURCE_FILE_NAME = "source_file_name"
 

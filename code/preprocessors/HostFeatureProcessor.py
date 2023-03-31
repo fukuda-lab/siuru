@@ -29,9 +29,7 @@ class HostFeatureProcessor(IPreprocessor):
         self.first_timestamp_from_host: Dict[str, Timestamp] = {}
         self.last_timestamp_from_host: Dict[str, Timestamp] = {}
 
-        self.sum_inter_arrival_times_from_host: Dict[str, Timedelta] = defaultdict(
-            lambda: Timedelta(0)
-        )
+        self.sum_inter_arrival_times_from_host: Dict[str, int] = defaultdict(lambda: 0)
 
     def process(self, features: FeatureGenerator) -> FeatureGenerator:
         sum_processing_time = 0
@@ -52,8 +50,8 @@ class HostFeatureProcessor(IPreprocessor):
 
             if src_ip not in self.first_timestamp_from_host:
                 # TODO switch to NaN? Needs special handling in decision trees.
-                host_last_inter_arrival_time = Timedelta(0)
-                host_avg_inter_arrival_time = Timedelta(0)
+                host_last_inter_arrival_time = 0
+                host_avg_inter_arrival_time = 0
                 self.first_timestamp_from_host[src_ip] = f[Packet.TIMESTAMP]
             else:
 
@@ -91,9 +89,9 @@ class HostFeatureProcessor(IPreprocessor):
                 / self.packet_count_to_host[dst_ip]
             )
 
-            f[Host.LAST_INTER_ARRIVAL_TIME] = host_last_inter_arrival_time.value
-            f[Host.AVG_INTER_ARRIVAL_TIME] = host_avg_inter_arrival_time.value
-            f[Host.CONNECTION_DURATION] = host_connection_duration.value
+            f[Host.LAST_INTER_ARRIVAL_TIME] = host_last_inter_arrival_time
+            f[Host.AVG_INTER_ARRIVAL_TIME] = host_avg_inter_arrival_time
+            f[Host.CONNECTION_DURATION] = host_connection_duration
 
             sum_processing_time += time.process_time_ns() - start_time_ref
             packet_count += 1
