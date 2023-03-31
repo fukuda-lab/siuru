@@ -1,3 +1,4 @@
+import time
 from collections import defaultdict
 from typing import Dict, Any, Tuple
 
@@ -11,6 +12,8 @@ from common.features import (
     FeatureGenerator,
     FlowIdentifier,
 )
+from common.functions import report_performance
+from pipeline_logger import PipelineLogger
 
 from preprocessors.IPreprocessor import IPreprocessor
 
@@ -44,7 +47,12 @@ class WindowFlowFeatureProcessor(IPreprocessor):
         ] = defaultdict(lambda: Timedelta(0))
 
     def process(self, features: FeatureGenerator) -> FeatureGenerator:
+        sum_processing_time = 0
+        packet_count = 0
+
         for f in features:
+            start_time_ref = time.process_time_ns()
+
             flow_id: FlowIdentifier = flow_identifier(f)
             timestamp = f[Packet.TIMESTAMP]
 
@@ -71,15 +79,26 @@ class WindowFlowFeatureProcessor(IPreprocessor):
                 self.last_timestamp[flow_id] = timestamp
                 self.first_timestamp_after_yield[flow_id] = timestamp
 
+                sum_processing_time += time.process_time_ns() - start_time_ref
+                packet_count += 1
                 yield f
 
             else:
+                # Process the packet, but yield nothing.
                 self.window_packet_count[flow_id] += 1
                 self.window_packet_size_sum[flow_id] += f[Packet.IP_PACKET_SIZE]
                 self.window_sum_inter_arrival_times[flow_id] += (
                     timestamp - self.last_timestamp[flow_id]
                 )
                 self.last_timestamp[flow_id] = timestamp
+
+                sum_processing_time += time.process_time_ns() - start_time_ref
+                packet_count += 1
+
+        log = PipelineLogger.get_logger()
+        report_performance(type(self).__name__, log, packet_count, sum_processing_time)
+
+
 
     @staticmethod
     def input_signature():

@@ -1,6 +1,8 @@
+import time
 from typing import Dict, List, Optional, Any
 
 from common.features import IFeature, PredictionField, PacketFeature, FeatureGenerator
+from common.functions import report_performance
 from pipeline_logger import PipelineLogger
 from preprocessors.IPreprocessor import IPreprocessor
 
@@ -44,7 +46,16 @@ class FileLabelProcessor(IPreprocessor):
         log.info(f"Label for data: {self.value}")
 
     def process(self, features: FeatureGenerator) -> FeatureGenerator:
+        sum_processing_time = 0
+        packet_count = 0
+
         for f in features:
+            start_time_ref = time.process_time_ns()
             if self.value is not None:
                 f[PredictionField.GROUND_TRUTH] = self.value
+
+            sum_processing_time += time.process_time_ns() - start_time_ref
+            packet_count += 1
             yield f
+
+        report_performance(type(self).__name__, log, packet_count, sum_processing_time)

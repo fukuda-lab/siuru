@@ -1,9 +1,12 @@
+import time
 from typing import Any, Dict, Union, Generator, Tuple, Optional, List
 
 import numpy as np
 
+from common.functions import report_performance
 from encoders.IDataEncoder import IDataEncoder
 from common.features import IFeature, FeatureGenerator
+from pipeline_logger import PipelineLogger
 
 
 class DefaultEncoder(IDataEncoder):
@@ -14,13 +17,22 @@ class DefaultEncoder(IDataEncoder):
     def encode(
         self, features: FeatureGenerator, **kwargs
     ) -> Generator[Tuple[Dict[IFeature, Any], np.ndarray], None, None]:
-        # TODO check if batching and returning multiple features is faster.
-        # Reference: RF with single-feature processing managed 181 packets/s.
+        sum_processing_time = 0
+        packet_count = 0
+
         for sample in features:
+            start_time_ref = time.process_time_ns()
             if self.feature_filter:
-                yield sample, np.fromiter(
+                encoding = np.fromiter(
                     [v for k, v in sample.items() if k.value in self.feature_filter],
                     dtype=float,
                 )
             else:
-                yield sample, np.fromiter(sample.values(), dtype=float)
+                encoding = np.fromiter(sample.values(), dtype=float)
+
+            sum_processing_time += time.process_time_ns() - start_time_ref
+            packet_count += 1
+            yield sample, encoding
+
+        log = PipelineLogger.get_logger()
+        report_performance(type(self).__name__, log, packet_count, sum_processing_time)

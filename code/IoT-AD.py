@@ -86,7 +86,9 @@ def main():
     if not first_sample:
         log.warning("No data in encoded feature stream!")
     elif len(first_sample) == 2:  # Assure sample matches the intended signature.
-        log.debug(f"Features of the first sample:\n{first_sample[0]}")
+        log.debug("Features of the first sample:")
+        for k, v in first_sample[0].items():
+            log.debug(f" | {k}: {v}")
         log.debug(f"Encoded sample: {first_sample[1]}")
 
     if model_specification["train_new_model"]:
@@ -94,7 +96,8 @@ def main():
         model_instance.train(
             encoded_feature_generator, path_to_store=model_instance.store_file
         )
-        model_instance.save_configuration(json.dumps(configuration, indent=4))
+        if not model_specification["skip_saving_model"]:
+            model_instance.save_configuration(json.dumps(configuration, indent=4))
     else:
         # Prediction time!
         reporter_instances: List[IReporter] = []

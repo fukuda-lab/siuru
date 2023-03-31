@@ -1,3 +1,4 @@
+import time
 from collections import defaultdict
 from typing import Dict, Any
 
@@ -9,6 +10,8 @@ from common.features import (
     HostFeature as Host,
     FeatureGenerator,
 )
+from common.functions import report_performance
+from pipeline_logger import PipelineLogger
 
 from preprocessors.IPreprocessor import IPreprocessor
 
@@ -31,7 +34,11 @@ class HostFeatureProcessor(IPreprocessor):
         )
 
     def process(self, features: FeatureGenerator) -> FeatureGenerator:
+        sum_processing_time = 0
+        packet_count = 0
+
         for f in features:
+            start_time_ref = time.process_time_ns()
             self.overall_packet_counter += 1
 
             src_ip = f[Packet.IP_SOURCE_ADDRESS]
@@ -88,7 +95,13 @@ class HostFeatureProcessor(IPreprocessor):
             f[Host.AVG_INTER_ARRIVAL_TIME] = host_avg_inter_arrival_time.value
             f[Host.CONNECTION_DURATION] = host_connection_duration.value
 
+            sum_processing_time += time.process_time_ns() - start_time_ref
+            packet_count += 1
+
             yield f
+
+        log = PipelineLogger.get_logger()
+        report_performance(type(self).__name__, log, packet_count, sum_processing_time)
 
     @staticmethod
     def input_signature():

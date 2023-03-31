@@ -1,11 +1,15 @@
 import json
 import re
+import time
 from typing import List, Any, Dict
 
 import pandas
 
 from common.features import IFeature, PacketFeature, FeatureGenerator
+from common.functions import report_performance
 from preprocessors.IPreprocessor import IPreprocessor
+
+from pipeline_logger import PipelineLogger
 
 
 class CppPacketProcessor(IPreprocessor):
@@ -47,7 +51,11 @@ class CppPacketProcessor(IPreprocessor):
         ]
 
     def process(self, features: FeatureGenerator) -> FeatureGenerator:
+        sum_processing_time = 0
+        packet_count = 0
+
         for f in features:
+            start_time_ref = time.process_time_ns()
             matched_input = CppPacketProcessor.input_pattern.match(
                 f[PacketFeature.CPP_FEATURE_STRING]
             )
@@ -73,4 +81,9 @@ class CppPacketProcessor(IPreprocessor):
             f[PacketFeature.TCP_SYN_FLAG] = cpp_features["tcp_flags"][6]
             f[PacketFeature.TCP_FIN_FLAG] = cpp_features["tcp_flags"][7]
 
+            sum_processing_time += time.process_time_ns() - start_time_ref
+            packet_count += 1
             yield f
+
+        log = PipelineLogger.get_logger()
+        report_performance(type(self).__name__, log, packet_count, sum_processing_time)

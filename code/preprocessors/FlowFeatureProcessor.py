@@ -1,3 +1,4 @@
+import time
 from collections import defaultdict
 from typing import Dict, Any, Tuple
 
@@ -10,6 +11,8 @@ from common.features import (
     FlowFeature as Flow,
     FeatureGenerator,
 )
+from common.functions import report_performance
+from pipeline_logger import PipelineLogger
 
 from preprocessors.IPreprocessor import IPreprocessor
 
@@ -43,7 +46,12 @@ class FlowFeatureProcessor(IPreprocessor):
         ] = defaultdict(lambda: Timedelta(0))
 
     def process(self, features: FeatureGenerator) -> FeatureGenerator:
+        sum_processing_time = 0
+        packet_count = 0
+
         for f in features:
+            start_time_ref = time.process_time_ns()
+
             flow_id: Tuple[str, str, int, int, str] = flow_identifier(f)
 
             self.packet_count_by_flow[flow_id] += 1
@@ -81,7 +89,12 @@ class FlowFeatureProcessor(IPreprocessor):
             f[Flow.AVG_INTER_ARRIVAL_TIME] = flow_avg_inter_arrival_time.value
             f[Flow.CONNECTION_DURATION] = flow_connection_duration.value
 
+            sum_processing_time += time.process_time_ns() - start_time_ref
+            packet_count += 1
             yield f
+
+        log = PipelineLogger.get_logger()
+        report_performance(type(self).__name__, log, packet_count, sum_processing_time)
 
     @staticmethod
     def input_signature():
