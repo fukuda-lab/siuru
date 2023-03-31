@@ -69,7 +69,10 @@ def main():
     # Initialize model from class name.
     model_name = model_specification["class"]
     model_class = globals()[model_name]
-    model_instance: IAnomalyDetectionModel = model_class(**model_specification)
+    model_instance: IAnomalyDetectionModel = model_class(
+        full_config_json=json.dumps(configuration, indent=4),
+        **model_specification
+    )
 
     encoder_name = model_specification["encoder"]["class"]
     encoder_class = globals()[encoder_name]
@@ -96,8 +99,6 @@ def main():
         model_instance.train(
             encoded_feature_generator, path_to_store=model_instance.store_file
         )
-        if not model_specification["skip_saving_model"]:
-            model_instance.save_configuration(json.dumps(configuration, indent=4))
     else:
         # Prediction time!
         reporter_instances: List[IReporter] = []

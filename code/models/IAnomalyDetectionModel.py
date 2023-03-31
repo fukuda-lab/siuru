@@ -14,6 +14,7 @@ class IAnomalyDetectionModel(ABC):
         skip_saving_model: bool = False,
         model_storage_base_path: Optional[str] = None,
         model_relative_path: Optional[str] = None,
+        full_config_json: Optional[str] = None,
         **kwargs,
     ):
 
@@ -32,6 +33,8 @@ class IAnomalyDetectionModel(ABC):
             elif not os.path.exists(os.path.dirname(self.store_file)):
                 # Create the directory to store the new model.
                 os.mkdir(os.path.dirname(self.store_file))
+            if full_config_json:
+                self.save_configuration(full_config_json)
 
         if not self.train_new_model and not os.path.exists(self.store_file):
             # The specified model is not available.
