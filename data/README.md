@@ -112,6 +112,8 @@ https://www.kaggle.com/datasets/cnrieiit/mqttset
 
 Related paper: https://www.mdpi.com/1424-8220/20/22/6578/htm
 
+Discussion: the paper has a lot of good ideas on feature processing, including which MQTT-protocol specific features to include (flags) or to exclude (topic string).
+
 About:
 
 The proposed work aims to create a dataset linked to the IoT context, in particular on the MQTT communication protocol, in order to give to the research and industrial community an initial dataset to use in their application. The dataset is composed by IoT sensors based on MQTT where each aspect of a real network is defined. In particular, the MQTT broker is instantiated by using Eclipse Mosquitto and the network is composed by 8 sensors. The scenario is related to a smart home environment where sensors retrieve information about temperature, light, humidity, CO-Gas, motion, smoke, door and fan with different time interval since the behaviour of each sensor is different with the others.

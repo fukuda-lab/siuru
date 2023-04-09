@@ -45,7 +45,7 @@ def main():
     assert configuration, "Could not load configuration file!"
     log.debug("Configuration loaded!")
 
-    feature_stream = []
+    feature_stream = itertools.chain([])
 
     for data_source in configuration["DATA_SOURCES"]:
         loader_name = data_source["loader"]["class"]
