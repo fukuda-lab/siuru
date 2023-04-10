@@ -13,9 +13,145 @@ the flow of data between components:
 Elements in gray are not yet implemented. For details on the components, see the
 _Repository Structure_ section below.
 
-## Quickstart
+## Reporting (optional)
+
+These components are used in the demo configurations to store model predictions.
+It is possible to run the demos without InfluxDB + Grafana reporting by removing
+the ``InfluxDBReporter`` entry from the output section of configuration files.
+
+### InfluxDB
+
+Install [InfluxDB](https://docs.influxdata.com/influxdb/v2.6/install/) for example as
+a Docker container and follow the setup guide to create an organization and bucket.
+
+Also create a directory where InfluxDB should store the data. In the commands below,
+it is referred to as `</project/root>/influxdb`.
+
+Start the image with:
+```
+docker run -p 8086:8086 \
+--volume </project/root>/influxdb:/var/lib/influxdb2 \
+influxdb:2.6.1 --reporting-disabled
+```
+
+From the interface that starts under http://localhost:8086 by default, generate a
+token with read-write permissions to use in Grafana and when running `IoT-AD.py` with
+reporting enabled.
+
+If you later wish to clear the sample data stored in InfluxDB, use the following recipe,
+replacing the token placeholder with your generated one:
+
+```bash
+# Find the name of the container.
+docker ps
+# Open interactive shell.
+docker exec -it frosty_dijkstra /bin/bash
+
+# Inside the shell, run the deletion command.
+influx delete --bucket default --org default \
+--start 2009-01-02T23:00:00Z --stop 2024-01-02T23:00:00Z \
+--token <token>
+exit
+```
+
+### Grafana
+
+Install
+[Grafana](https://grafana.com/docs/grafana/latest/setup-grafana/installation/debian/)
+for example by following the guide for Ubuntu and Debian. Start the service:
+
+```bash
+sudo service grafana-server start
+```
+
+and follow the guide to set up an 
+[InfluxDB data source](https://grafana.com/docs/grafana/latest/datasources/influxdb/).
+If all goes well, Grafana should be able to connect to the InfluxDB instance you are
+running.
+
+## Data preparation
+
+The examples below assumes that we have stored data for anomaly detection under 
+`</project/root>/data/MQTTset/Data/PCAP/slowite.pcap`, 
+`</project/root>/data/MQTTset/Data/PCAP/malariaDoS.pcap` and
+`</project/root>/data/MQTTset/Data/PCAP/capture_custom_1h.pcap`.
+
+The last one is a custom segment from the full MQTTSet normal traffic file,
+ask me for a reference.
+
+
+## Quickstart with Docker
+
+### Build the container
+
+This automatic build is a quick alternative to manually setting up a Python environment
+as described below. First, make sure Docker is installed and the daemon is running.
+
+Then you can build the container locally.
+In this example, the container will be tagged as ``siuru:latest``:
+
+```bash
+cd code
+docker build . -t siuru:latest
+```
+
+### Start the container
+
+Replace the project root with a path to your actual project. The command maps your
+local configuration, data, and model paths into the container, allowing the trained
+model to persist over multiple runs. The ``--network-host`` flag is needed to store
+prediction reports in InfluxDB (enabled in the sample configuration files).
+
+```bash
+docker run -it \
+--network=host \
+-v </project/root>/configurations:/configurations \
+-v </project/root>/data:/data \
+-v </project/root>/models:/models \
+siuru:latest \
+/bin/bash
+```
+
+### Train a random forest model
+
+In the interactive Docker session, run:
+
+```bash
+python3 code/IoT-AD.py -c /configurations/examples/flow-based-rf-train.json.jinja
+```
+
+The model will be stored under ``</project/root>/models/example-flow-based-rf``.
+
+### Test the model
+
+In an interactive session, run the following command, replacing the placeholder
+with a token generated in InfluxDB as described previously:
+
+```bash
+python3 code/IoT-AD.py \
+-c /configurations/examples/flow-based-rf-test.json.jinja \
+--influx-token <token>
+```
+
+You should see prediction data being stored in InfluxDB tagged as:
+``_measurement="example-flow-based-rf"``
+
+## Setup without Docker
+
+The pipeline is written in Python and C++, therefore Python requirements must be
+installed and the C++ feature extractor component built before running the pipeline.
 
 The commands below are meant to be run on Ubuntu 20.04.
+
+### Python environment
+
+I recommend to set up a Python virtual environment, e.g. pyenv. The Python
+libraries needed by this project can then be installed by running from root:
+
+```bash
+cd code
+pip install -r requirements.txt
+```
 
 ### Feature extractor
 
@@ -24,7 +160,7 @@ via Snap or package manager.
 
 In addition, the following dependencies are needed:
 ```bash
-sudo apt install libpcap0.8 libpcap0.8-dev libpcap0.8-dbg
+sudo apt install libpcap-dev
 ```
 
 Build and install PcapPlusPlus as follows:
@@ -50,50 +186,6 @@ interfaces. The path to the C++ executable is a command line argument to the mai
 anomaly detection program ``IoT-AD.py``. Whenever the executable is recompiled, the
 permissions must also be assigned again.
 
-### InfluxDB (only for reporting)
-
-Install [InfluxDB](https://docs.influxdata.com/influxdb/v2.6/install/) for example as
-a Docker container and follow the setup guide to create an organization and bucket.
-
-Also create a directory where InfluxDB should store the data. In the commands below,
-it is referred to as `</project/root>/influxdb`.
-
-Start the image with:
-```
-docker run -p 8086:8086 \
---volume </project/root>/influxdb:/var/lib/influxdb2 \
-influxdb:2.6.1 --reporting-disabled
-```
-
-From the interface that starts under http://localhost:8086 by default, generate a
-token with read-write permissions to use in Grafana and when running `IoT-AD.py` with
-reporting enabled.
-
-### Grafana (only for reporting)
-
-Install
-[Grafana](https://grafana.com/docs/grafana/latest/setup-grafana/installation/debian/)
-for example by following the guide for Ubuntu and Debian. Start the service:
-
-```bash
-sudo service grafana-server start
-```
-
-and follow the guide to set up an 
-[InfluxDB data source](https://grafana.com/docs/grafana/latest/datasources/influxdb/).
-If all goes well, Grafana should be able to connect to the InfluxDB instance you are
-running.
-
-### Python environment
-
-I recommend to set up a Python virtual environment, e.g. pyenv. The Python
-libraries needed by this project can then be installed by running from root:
-
-```bash
-cd code
-pip install -r requirements.txt
-```
-
 ### Training a model
 
 Refer to the command line hints of ``code/IoT-AD.py`` for information on the available 
@@ -101,12 +193,8 @@ parameters, and the files under ``configurations/examples`` for sample configura
 files.
 
 The example below assumes that we have stored the following:
-1. data for anomaly detection under 
-    `</project/root>/data/MQTTset/Data/PCAP/slowite.pcap`, 
-    `</project/root>/data/MQTTset/Data/PCAP/malariaDoS.pcap` and
-    `</project/root>/data/MQTTset/Data/PCAP/capture_custom_1h.pcap` (which is a custom
-    segment from the full MQTTSet normal traffic file, ask me for reference)
-2. built the C++ feature extractor using CMake under `</project/root>/cmake-build-debug`
+1. data for anomaly detection as described above,
+2. built the C++ feature extractor using CMake under `</project/root>/cmake-build-debug`.
 
 As a result of successful training, we will have a random forest classifier stored under `</project/root>/models/example-flow-based-rf/flow-based-rf-train.pickle`.
 
@@ -122,10 +210,10 @@ Refer to the commandline hint of ``code/IoT-AD.py`` for information on the avail
 parameters.
 
 The sample command below assumes that we have the following:
-1. data for anomaly detection similarly as for training
-2. built the C++ feature extractor using CMake under `</project/root>/cmake-build-debug`
-3. trained and stored the model under `</project/root>/models/example-flow-based-rf/flow-based-rf-train.pickle` (see previous section)
-4. configured InfluxDB as seen below, including the generated token
+1. data for anomaly detection as described above,
+2. built the C++ feature extractor using CMake under `</project/root>/cmake-build-debug`,
+3. trained and stored the model under `</project/root>/models/example-flow-based-rf/flow-based-rf-train.pickle` (see previous section),
+4. configured InfluxDB as seen below, including the generated token.
 
 ```bash
 cd code
