@@ -22,7 +22,8 @@ class MLPAutoEncoderModel(IAnomalyDetectionModel):
         skip_saving_model=False,
         model_storage_base_path=None,
         model_relative_path=None,
-        **kwargs,
+        **kwargs,# p.time(features[PacketFeature.TIMESTAMP].isoformat(timespec="nanoseconds"))
+
     ):
 
         super().__init__(
@@ -33,10 +34,10 @@ class MLPAutoEncoderModel(IAnomalyDetectionModel):
             model_relative_path,
             **kwargs,
         )
-
-        # TODO add configuration options for the random forest.
         self.model_instance = None
 
+
+    # TODO Doesn't work - update to use the new interface!
     def train(
         self,
         true_features: Generator[np.array, None, None],
@@ -58,7 +59,8 @@ class MLPAutoEncoderModel(IAnomalyDetectionModel):
         )
         ae = MLPRegressor(
             alpha=1e-15,
-            hidden_layer_sizes=[25, 50, 25, 2, 25, 50, 25],
+            hidden_layer_sizes=[25, 50, 25, 2, 25, 50,# p.time(features[PacketFeature.TIMESTAMP].isoformat(timespec="nanoseconds"))
+         25],
             random_state=1,
             max_iter=10000,
         )

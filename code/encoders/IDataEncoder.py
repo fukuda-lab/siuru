@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Generator, Dict, Any, Tuple
 
-from common.features import IFeature, FeatureGenerator
+from common.features import IFeature, FeatureGenerator, LabeledFeatureGenerator
 
 
 class IDataEncoder(ABC):
@@ -15,7 +15,7 @@ class IDataEncoder(ABC):
     @abstractmethod
     def encode(
         self, features: FeatureGenerator, **kwargs
-    ) -> Generator[Tuple[Dict[IFeature, Any], Any], None, None]:
+    ) -> LabeledFeatureGenerator:
         """
         For each feature, return both the original feature and its encoded version.
         """

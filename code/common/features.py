@@ -89,6 +89,9 @@ FeatureGenerator = NewType(
     "FeatureGenerator", Generator[Dict[IFeature, Any], None, None]
 )
 
+LabeledFeatureGenerator = NewType(
+    "LabeledFeatureGenerator", Generator[Tuple[Dict[IFeature, Any], Any], None, None]
+)
 
 FlowIdentifier = NewType("FlowIdentifier", Tuple[str, str, int, int, str])
 

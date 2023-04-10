@@ -2,7 +2,7 @@ import os
 from abc import ABC, abstractmethod
 from typing import Optional, Any, Generator, Tuple, Dict
 
-from common.features import IFeature
+from common.features import IFeature, LabeledFeatureGenerator
 from dataloaders import IDataLoader
 
 
@@ -25,14 +25,14 @@ class IAnomalyDetectionModel(ABC):
         assert model_storage_base_path
         if not model_relative_path:
             model_relative_path = os.path.join(model_name, f"{model_name}.pickle")
-        self.store_file = os.path.join(model_storage_base_path, model_relative_path)
+        self.store_file = os.path.abspath(os.path.join(model_storage_base_path, model_relative_path))
 
         if self.train_new_model and not self.skip_saving_model:
             if os.path.exists(self.store_file):
                 raise RuntimeError(f"Model file already exists: {self.store_file}")
             elif not os.path.exists(os.path.dirname(self.store_file)):
                 # Create the directory to store the new model.
-                os.mkdir(os.path.dirname(self.store_file))
+                os.makedirs(os.path.dirname(self.store_file))
             if full_config_json:
                 self.save_configuration(full_config_json)
 
@@ -50,7 +50,7 @@ class IAnomalyDetectionModel(ABC):
 
     @abstractmethod
     def train(
-        self, data: Generator[Tuple[Dict[IFeature, Any], Any], None, None], **kwargs
+        self, data: LabeledFeatureGenerator, **kwargs
     ):
         pass
 

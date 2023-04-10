@@ -39,9 +39,6 @@ class InfluxDBReporter(IReporter):
             token=self.token,
         )
         self.logger = pipeline_logger.PipelineLogger.get_logger()
-        # TODO optimize batch reporting (the default).
-        # 2023-03-02 Performance with synchronous reporting: 87 packets/s.
-        # 2023-03-02 Performance with default batch reporting: 168 packets/s.
         self.write_api = self.client.write_api(
             success_callback=self.success,
             error_callback=self.error,
@@ -64,7 +61,6 @@ class InfluxDBReporter(IReporter):
 
     def report(self, features: Dict[IFeature, Any]):
         p = Point(self.measurement_name)
-        p.time(features[PacketFeature.TIMESTAMP].isoformat(timespec="nanoseconds"))
         p.tag(PredictionField.MODEL_NAME.value, features[PredictionField.MODEL_NAME])
         p.field(
             PredictionField.OUTPUT_BINARY.value, features[PredictionField.OUTPUT_BINARY]
@@ -72,8 +68,11 @@ class InfluxDBReporter(IReporter):
         p.field(
             PredictionField.GROUND_TRUTH.value, features[PredictionField.GROUND_TRUTH]
         )
+        # Save packet timestamp as a field -- InfluxDB timestamp will be creation time.
+        p.field("packet_timestamp", features[PacketFeature.TIMESTAMP])
 
-        # TODO Decide on relevant tags, or leave them customizable.
+        # TODO Decide on relevant tags, or leave them configurable.
+        # p.time(features[PacketFeature.TIMESTAMP].isoformat(timespec="nanoseconds"))
         # p.tag(PacketFeature.IP_SOURCE_ADDRESS.value, features[PacketFeature.IP_SOURCE_ADDRESS])
         # p.tag(PacketFeature.IP_SOURCE_PORT.value, features[PacketFeature.IP_SOURCE_PORT])
         # p.tag(PacketFeature.IP_DESTINATION_ADDRESS.value, features[PacketFeature.IP_DESTINATION_ADDRESS])
