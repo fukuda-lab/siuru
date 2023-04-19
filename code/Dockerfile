@@ -10,6 +10,7 @@ RUN apt-get clean && \
     apt-get -y upgrade && \
     apt-get -y install \
     apt-utils \
+    wireshark-common \
     tcpdump \
     libpcap-dev \
     git \
