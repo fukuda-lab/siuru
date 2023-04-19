@@ -36,6 +36,7 @@ class RandomForestModel(IAnomalyDetectionModel):
             skip_saving_model=skip_saving_model,
             model_storage_base_path=model_storage_base_path,
             model_relative_path=model_relative_path,
+            **kwargs
         )
 
     def train(

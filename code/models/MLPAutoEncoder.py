@@ -22,8 +22,7 @@ class MLPAutoEncoderModel(IAnomalyDetectionModel):
         skip_saving_model=False,
         model_storage_base_path=None,
         model_relative_path=None,
-        **kwargs,# p.time(features[PacketFeature.TIMESTAMP].isoformat(timespec="nanoseconds"))
-
+        **kwargs,
     ):
 
         super().__init__(
