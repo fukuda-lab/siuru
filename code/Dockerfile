@@ -19,7 +19,8 @@ RUN apt-get clean && \
     clang \
     clang-tools \
     python3 \
-    python3-pip
+    python3-pip \
+    bc
 
 RUN pip3 install -r code/requirements.txt
 
