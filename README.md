@@ -222,6 +222,33 @@ python IoT-AD.py \
 --influx-token <token>
 ```
 
+## Working with data
+
+Use the bash script under ``code/split_dataset.bash`` to split a PCAP file into training,
+validation, and test sets. The script works based on flows, so packets from the same
+connection end up in the same file after the split.
+
+The script makes use of ``PcapSplitter`` and ``mergecap``, which are both installed in
+the Docker image mentioned above. If you run the Docker image with a mapping to the data
+directory, the script should work out-of-the-box (replace </project/root> with your
+local path to the project):
+
+```bash
+docker run -it \
+-v </project/root>/code:/code \
+-v </project/root>/data:/data \
+siuru:latest \
+/bin/bash
+```
+
+In the container, you can run:
+```bash
+cd code
+./split_dataset.bash --help
+./split_dataset.bash head-tail /data/MQTTset/Data/PCAP/slowite.pcap /data/MQTTset/Data/PCAP/slowite-train-60-val-10-test-30 60 10
+./split_dataset.bash round-robin /data/MQTTset/Data/PCAP/bruteforce.pcapng /data/MQTTset/Data/PCAP/bruteforce-train-90-val-5-test-5 100 90 5
+```
+
 ## Repository structure
 
 ### code/cpp-extract-features
