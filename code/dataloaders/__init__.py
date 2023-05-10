@@ -4,3 +4,4 @@
 from .IDataLoader import IDataLoader
 from .PcapFileLoader import PcapFileLoader
 from .PacketSniffer import PacketSniffer
+from .XarrayPcapFileLoader import XarrayPcapFileLoader

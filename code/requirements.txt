@@ -1,8 +1,11 @@
 pandas
 pytest
 black
-scikit-learn
+scikit-learn==1.2.2
 jinja2
+numpy
+packaging
+xarray
 
 # Scapy + optional dependencies
 --pre scapy[basic]

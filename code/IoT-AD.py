@@ -65,6 +65,14 @@ def main():
 
         feature_stream = itertools.chain(feature_stream, new_feature_stream)
 
+    if len(configuration["MODEL"]) == 0:
+        log.info("No model specified - counting input data points:")
+        count = 0
+        for _ in feature_stream:
+            count += 1
+        log.info(f"{count} elements.")
+        exit(0)
+
     model_specification = configuration["MODEL"]
     # Initialize model from class name.
     model_name = model_specification["class"]
