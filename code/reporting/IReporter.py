@@ -9,6 +9,10 @@ class IReporter(ABC):
     def report(self, features: Dict[IFeature, Any]):
         pass
 
+    @abstractmethod
+    def end_processing(self):
+        pass
+
     @staticmethod
     @abstractmethod
     def input_signature() -> List[IFeature]:

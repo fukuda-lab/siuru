@@ -81,6 +81,10 @@ class InfluxDBReporter(IReporter):
 
         self.write_api.write(bucket=self.bucket, org=self.org, record=p)
 
+    def end_processing(self):
+        self.write_api.flush()
+        self.write_api.close()
+
     @staticmethod
     def input_signature():
         return [

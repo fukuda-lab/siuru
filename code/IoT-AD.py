@@ -128,9 +128,12 @@ def main():
         end = time.perf_counter()
         packets_per_second = count / (end - start)
         log.info(
-            f"Predicted {count} samples in {end - start} seconds"
+            f"Predicted {count} and reported samples in {end - start} seconds"
             f" ({packets_per_second} packets/s)."
         )
+
+        for reporter_instance in reporter_instances:
+            reporter_instance.end_processing()
 
 
 if __name__ == "__main__":
