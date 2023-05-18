@@ -1,6 +1,6 @@
 import time
 
-from typing import Any, Dict, Union, Generator, Tuple, Optional, List
+from typing import Any, Dict, Generator, Tuple, Optional, List
 
 import numpy as np
 
@@ -17,7 +17,7 @@ class DefaultEncoder(IDataEncoder):
     def __init__(self, feature_filter: Optional[List[str]] = None, **kwargs):
         super().__init__(**kwargs)
         self.feature_filter = feature_filter
-        log.info(f"Applying feature filter: {self.feature_filter}")
+        log.info(f"Applied feature filter: {self.feature_filter}")
 
     def encode(
         self, features: FeatureGenerator, **kwargs
@@ -30,10 +30,10 @@ class DefaultEncoder(IDataEncoder):
             if self.feature_filter:
                 encoding = np.fromiter(
                     [v for k, v in sample.items() if k.value in self.feature_filter],
-                    dtype=float,
-                )
+                    dtype=np.float32,
+                ).reshape(1, -1)
             else:
-                encoding = np.fromiter(sample.values(), dtype=float)
+                encoding = np.fromiter(sample.values(), dtype=np.float32).reshape(1, -1)
 
             sum_processing_time += time.process_time_ns() - start_time_ref
             packet_count += 1

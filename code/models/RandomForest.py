@@ -6,14 +6,6 @@ import numpy as np
 from joblib import dump, load
 
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import (
-    f1_score,
-    precision_score,
-    recall_score,
-    confusion_matrix,
-    accuracy_score,
-)
-from sklearn.model_selection import train_test_split
 
 from common.features import IFeature, PredictionField
 from models.IAnomalyDetectionModel import IAnomalyDetectionModel
@@ -70,25 +62,6 @@ class RandomForestModel(IAnomalyDetectionModel):
         self.model_instance = RandomForestClassifier()
         self.model_instance.fit(encoded_features, labels)
 
-        # TODO Move evaluation functionality into a separate reporter class.
-        # y_pred = self.model_instance.predict(X_test)
-        #
-        # cnf_matrix = confusion_matrix(y_test, y_pred)
-        # log.debug(f"\nConfusion matrix:\n\n{cnf_matrix}\n")
-        #
-        # log.info(f"Accuracy: {accuracy_score(y_test, y_pred)}")
-        # log.info(f"Precision: {precision_score(y_test, y_pred, average='macro')}")
-        # log.info(f"Recall: {recall_score(y_test, y_pred, average='macro')}")
-        # log.info(f"F1 score: {f1_score(y_test, y_pred, average='macro')}")
-        #
-        # if feature_names:
-        #     log.debug("Feature importances:")
-        #     for idx, name in enumerate(feature_names):
-        #         log.debug(
-        #             f"{name : <40} "
-        #             f"{self.model_instance.feature_importances_[idx]:6.4f}"
-        #         )
-
         if not self.skip_saving_model:
             dump(self.model_instance, self.store_file)
 
@@ -99,7 +72,22 @@ class RandomForestModel(IAnomalyDetectionModel):
         return self.model_instance.predict(X)
 
     def predict(self, features, encoded_data, **kwargs):
-        features[PredictionField.MODEL_NAME] = self.model_name
-        features[PredictionField.OUTPUT_BINARY] = int(
-            self.model_instance.predict(encoded_data)[0]
-        )
+        # Requirements for encoded data:
+        #
+        # X : {array-like, sparse matrix} of shape (n_samples, n_features)
+        #     The input samples. Internally, its dtype will be converted to
+        #     ``dtype=np.float32``. If a sparse matrix is provided, it will be
+        #     converted into a sparse ``csr_matrix``.
+        #
+        # Source: https://github.com/scikit-learn/scikit-learn/blob/72a604975102b2d93082385d7a5a7033886cc825/sklearn/ensemble/_forest.py
+
+        prediction = self.model_instance.predict(encoded_data)
+        if isinstance(features, list):
+            for i, sample in enumerate(features):
+                sample[PredictionField.MODEL_NAME] = self.model_name
+                sample[PredictionField.OUTPUT_BINARY] = prediction[i]
+                yield sample
+        else:
+            features[PredictionField.MODEL_NAME] = self.model_name
+            features[PredictionField.OUTPUT_BINARY] = prediction[0]
+            yield features

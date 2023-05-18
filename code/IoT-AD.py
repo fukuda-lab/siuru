@@ -131,15 +131,15 @@ def main():
         start = time.perf_counter()
 
         for sample, encoding in encoded_feature_generator:
-            model_instance.predict(sample, encoding.reshape(1, -1))
-            for reporter_instance in reporter_instances:
-                reporter_instance.report(sample)
+            for predicted_sample in model_instance.predict(sample, encoding):
+                for reporter_instance in reporter_instances:
+                    reporter_instance.report(predicted_sample)
                 count += 1
 
         end = time.perf_counter()
         packets_per_second = count / (end - start)
         log.info(
-            f"Predicted {count} and reported samples in {end - start} seconds"
+            f"Predicted and reported {count} samples in {end - start} seconds"
             f" ({packets_per_second} packets/s)."
         )
 
