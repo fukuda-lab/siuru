@@ -22,7 +22,6 @@ class InfluxDBReporter(IReporter):
         measurement_name: Optional[str] = "anomaly_detection",
         **kwargs,
     ):
-
         if not influx_token:
             log.error("[InfluxDBReporter] Initialized without a token!")
             exit(1)

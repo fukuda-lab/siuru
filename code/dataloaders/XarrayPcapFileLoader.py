@@ -13,10 +13,7 @@ log = PipelineLogger.get_logger()
 
 
 class XarrayPcapFileLoader(IDataLoader):
-    def __init__(self,
-                 filepath: str,
-                 preprocessor_path: str,
-                 **kwargs):
+    def __init__(self, filepath: str, preprocessor_path: str, **kwargs):
         super().__init__(**kwargs)
         self.filepath = filepath
         self.preprocessor_path = preprocessor_path
@@ -39,7 +36,8 @@ class XarrayPcapFileLoader(IDataLoader):
             line = process.stdout.readline()
             if line:
                 packet_features = xarray.DataArray(
-                    [line], dims=[PacketFeature.CPP_FEATURE_STRING])
+                    [line], dims=[PacketFeature.CPP_FEATURE_STRING]
+                )
                 sum_processing_time += time.process_time_ns() - start_time_ref
                 yield packet_features
                 packet_count += 1

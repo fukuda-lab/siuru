@@ -53,12 +53,14 @@ class CppPacketProcessor(IPreprocessor):
 
     def process(self, features: FeatureGenerator) -> FeatureGenerator:
         sum_processing_time = 0
-        packet_count = 0
+        valid_packet_count = 0
+        invalid_packet_count = 0
 
         for f in features:
             start_time_ref = time.process_time_ns()
             parts = f[PacketFeature.CPP_FEATURE_STRING].rstrip().split(",")
             if len(parts) != 16:
+                invalid_packet_count += 1
                 continue
 
             f[PacketFeature.IP_SOURCE_ADDRESS] = parts[0]
@@ -79,8 +81,13 @@ class CppPacketProcessor(IPreprocessor):
             f[PacketFeature.TCP_SEGMENT_SIZE] = int(parts[15])
 
             sum_processing_time += time.process_time_ns() - start_time_ref
-            packet_count += 1
+            valid_packet_count += 1
             yield f
 
         log = PipelineLogger.get_logger()
-        report_performance(type(self).__name__, log, packet_count, sum_processing_time)
+        log.info(
+            f"[{type(self).__name__}] {invalid_packet_count} invalid packets dropped."
+        )
+        report_performance(
+            type(self).__name__, log, valid_packet_count, sum_processing_time
+        )

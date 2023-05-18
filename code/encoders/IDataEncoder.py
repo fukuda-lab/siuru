@@ -13,9 +13,7 @@ class IDataEncoder(ABC):
         pass
 
     @abstractmethod
-    def encode(
-        self, features: FeatureGenerator, **kwargs
-    ) -> LabeledFeatureGenerator:
+    def encode(self, features: FeatureGenerator, **kwargs) -> LabeledFeatureGenerator:
         """
         For each feature, return both the original feature and its encoded version.
         """

@@ -1,6 +1,6 @@
 import os
 from abc import ABC, abstractmethod
-from typing import Optional, Any, Generator, Tuple, Dict
+from typing import Optional, Any, Generator, Tuple, Dict, Union, List
 
 from common.features import IFeature, LabeledFeatureGenerator
 from dataloaders import IDataLoader
@@ -17,7 +17,6 @@ class IAnomalyDetectionModel(ABC):
         full_config_json: Optional[str] = None,
         **kwargs,
     ):
-
         self.model_name = model_name
         self.train_new_model = train_new_model
         self.skip_saving_model = skip_saving_model
@@ -25,7 +24,9 @@ class IAnomalyDetectionModel(ABC):
         assert model_storage_base_path
         if not model_relative_path:
             model_relative_path = os.path.join(model_name, f"{model_name}.pickle")
-        self.store_file = os.path.abspath(os.path.join(model_storage_base_path, model_relative_path))
+        self.store_file = os.path.abspath(
+            os.path.join(model_storage_base_path, model_relative_path)
+        )
 
         if self.train_new_model and not self.skip_saving_model:
             if os.path.exists(self.store_file):
@@ -49,9 +50,7 @@ class IAnomalyDetectionModel(ABC):
             f.write(config)
 
     @abstractmethod
-    def train(
-        self, data: LabeledFeatureGenerator, **kwargs
-    ):
+    def train(self, data: LabeledFeatureGenerator, **kwargs):
         pass
 
     @abstractmethod
@@ -59,7 +58,12 @@ class IAnomalyDetectionModel(ABC):
         pass
 
     @abstractmethod
-    def predict(self, features: Dict[IFeature, Any], encoded_data: Any, **kwargs):
+    def predict(
+        self,
+        features: Union[Dict[IFeature, Any], List[Dict[IFeature, Any]]],
+        encoded_data: Any,
+        **kwargs,
+    ) -> Generator[Dict[IFeature, Any], None, None]:
         """
         Add a prediction entry based on encoded_data directly into
         the feature dictionary.

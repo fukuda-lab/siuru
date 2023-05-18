@@ -54,7 +54,6 @@ class HostFeatureProcessor(IPreprocessor):
                 host_avg_inter_arrival_time = 0
                 self.first_timestamp_from_host[src_ip] = f[Packet.TIMESTAMP]
             else:
-
                 host_last_inter_arrival_time = (
                     f[Packet.TIMESTAMP] - self.last_timestamp_from_host[src_ip]
                 )

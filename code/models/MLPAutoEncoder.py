@@ -24,7 +24,6 @@ class MLPAutoEncoderModel(IAnomalyDetectionModel):
         model_relative_path=None,
         **kwargs,
     ):
-
         super().__init__(
             model_name,
             train_new_model,
@@ -34,7 +33,6 @@ class MLPAutoEncoderModel(IAnomalyDetectionModel):
             **kwargs,
         )
         self.model_instance = None
-
 
     # TODO Doesn't work - update to use the new interface!
     def train(
@@ -58,8 +56,15 @@ class MLPAutoEncoderModel(IAnomalyDetectionModel):
         )
         ae = MLPRegressor(
             alpha=1e-15,
-            hidden_layer_sizes=[25, 50, 25, 2, 25, 50,# p.time(features[PacketFeature.TIMESTAMP].isoformat(timespec="nanoseconds"))
-         25],
+            hidden_layer_sizes=[
+                25,
+                50,
+                25,
+                2,
+                25,
+                50,  # p.time(features[PacketFeature.TIMESTAMP].isoformat(timespec="nanoseconds"))
+                25,
+            ],
             random_state=1,
             max_iter=10000,
         )

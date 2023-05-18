@@ -97,15 +97,26 @@ def main():
         log.warning("No data in encoded feature stream!")
     elif len(first_sample) == 2:  # Assure sample matches the intended signature.
         log.debug("Features of the first sample:")
-        for k, v in first_sample[0].items():
+        first_sample_data, _ = first_sample
+
+        if isinstance(first_sample_data, list):
+            # This is a hacky way to support both lists of sample features
+            # (as encoded my MultiSampleEncoder) and a dict containing the
+            # features of a single sample.
+            # TODO make more elegant (or move the logging to the encoder)!
+            first_sample_data = first_sample_data[0]
+        for k, v in first_sample_data.items():
             log.debug(f" | {k}: {v}")
-        log.debug(f"Encoded sample: {first_sample[1]}")
 
     if model_specification["train_new_model"]:
         # Train the model.
+        start = time.perf_counter()
         model_instance.train(
             encoded_feature_generator, path_to_store=model_instance.store_file
         )
+        end = time.perf_counter()
+        log.info(f"Trained new model in {end - start} seconds.")
+
     else:
         # Prediction time!
         reporter_instances: List[IReporter] = []

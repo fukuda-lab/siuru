@@ -1,5 +1,7 @@
 import logging
 from typing import Generator, Any, Dict, Tuple
+
+import numpy
 import numpy as np
 from joblib import dump, load
 
@@ -36,7 +38,7 @@ class RandomForestModel(IAnomalyDetectionModel):
             skip_saving_model=skip_saving_model,
             model_storage_base_path=model_storage_base_path,
             model_relative_path=model_relative_path,
-            **kwargs
+            **kwargs,
         )
 
     def train(
@@ -50,8 +52,20 @@ class RandomForestModel(IAnomalyDetectionModel):
         encoded_features = []
 
         for features, encoding in data:
-            labels.append(features[PredictionField.GROUND_TRUTH])
-            encoded_features.append(encoding)
+            if isinstance(features, list):
+                # Handle the list with multiple features used together with
+                # xarray DataArray encodings.
+                for f in features:
+                    labels.append(f[PredictionField.GROUND_TRUTH])
+                if not encoded_features:
+                    encoded_features = encoding
+                else:
+                    encoded_features = numpy.concatenate(
+                        (encoded_features, encoding), axis=0
+                    )
+            else:
+                labels.append(features[PredictionField.GROUND_TRUTH])
+                encoded_features.append(encoding)
 
         self.model_instance = RandomForestClassifier()
         self.model_instance.fit(encoded_features, labels)

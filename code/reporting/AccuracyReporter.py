@@ -13,13 +13,15 @@ class AccuracyReporter(IReporter):
 
     def report(self, features: Dict[IFeature, Any]):
         name = features[PredictionField.MODEL_NAME]
-        if features[PredictionField.OUTPUT_BINARY] == features[PredictionField.GROUND_TRUTH]:
+        if (
+            features[PredictionField.OUTPUT_BINARY]
+            == features[PredictionField.GROUND_TRUTH]
+        ):
             self.correct_classifications_per_model[name] += 1
         else:
             self.false_classifications_per_model[name] += 1
 
     def end_processing(self):
-
         # y_pred = self.model_instance.predict(X_test)
         #
         # cnf_matrix = confusion_matrix(y_test, y_pred)
@@ -43,7 +45,10 @@ class AccuracyReporter(IReporter):
         print("---")
         for model in self.correct_classifications_per_model.keys():
             print(model)
-            acc = self.correct_classifications_per_model[model] / (self.correct_classifications_per_model[model] + self.false_classifications_per_model[model])
+            acc = self.correct_classifications_per_model[model] / (
+                self.correct_classifications_per_model[model]
+                + self.false_classifications_per_model[model]
+            )
             print(f"Correct: {self.correct_classifications_per_model[model]}")
             print(f"False: {self.false_classifications_per_model[model]}")
             print(f"Accuracy: {acc}")

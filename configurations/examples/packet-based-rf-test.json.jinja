@@ -112,14 +112,8 @@
         },
     "OUTPUT": [
         {
-            "class": "InfluxDBReporter",
-            "kwargs": {
-                "measurement_name": "packet-based-rf",
-                "influx_url": "http://localhost:8086",
-                "influx_org": "default",
-                "influx_bucket": "default",
-                "influx_token": "{{ influx_token }}"
-            }
+            "class": "AccuracyReporter",
+            "kwargs": {}
         }
     ],
     "CPP_FEATURE_EXTRACTOR": "{{ project_root }}/cmake-build-debug/pcap-feature-extraction",
