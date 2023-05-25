@@ -21,8 +21,9 @@ log = PipelineLogger.get_logger()
 
 def main():
     """
-    Start the IoT anomaly detection pipeline.
+    Run the IoT anomaly detection pipeline based on a configuration file.
     """
+
     parser = argparse.ArgumentParser()
 
     parser.add_argument("-c", "--config-path", type=str, required=True)
@@ -44,6 +45,9 @@ def main():
         configuration = json.loads(template.render())
     assert configuration, "Could not load configuration file!"
     log.debug("Configuration loaded!")
+
+    # TODO add logfile path and level to configurations,
+    #  then initialize a file logger!
 
     feature_stream = itertools.chain([])
 
