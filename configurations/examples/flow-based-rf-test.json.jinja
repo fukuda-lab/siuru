@@ -112,14 +112,8 @@
     },
     "OUTPUT": [
         {
-            "class": "InfluxDBReporter",
-            "kwargs": {
-                "measurement_name": "flow-based-rf",
-                "influx_url": "http://localhost:8086",
-                "influx_org": "default",
-                "influx_bucket": "default",
-                "influx_token": "{{ influx_token }}"
-            }
+            "class": "AccuracyReporter",
+            "kwargs": {}
         }
     ],
     "VERSION": "{{ git_tag }}"

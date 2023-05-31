@@ -1,9 +1,9 @@
 import time
-from typing import Dict, List, Optional, Any
+from typing import List, Optional, Any
 
 from common.features import IFeature, PredictionField, PacketFeature, FeatureGenerator
 from common.functions import report_performance
-from pipeline_logger import PipelineLogger
+from common.pipeline_logger import PipelineLogger
 from preprocessors.IPreprocessor import IPreprocessor
 
 

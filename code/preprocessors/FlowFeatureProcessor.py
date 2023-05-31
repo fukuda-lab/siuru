@@ -9,7 +9,7 @@ from common.features import (
     FeatureGenerator,
 )
 from common.functions import report_performance
-from pipeline_logger import PipelineLogger
+from common.pipeline_logger import PipelineLogger
 
 from preprocessors.IPreprocessor import IPreprocessor
 

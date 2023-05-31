@@ -14,7 +14,7 @@ from preprocessors import *
 from encoders import *
 from reporting import *
 
-from pipeline_logger import PipelineLogger
+from common.pipeline_logger import PipelineLogger
 
 log = PipelineLogger.get_logger()
 
@@ -37,20 +37,31 @@ def main():
 
     log.debug(f"Loading configuration from: {config_path}")
     with open(config_path) as config_file:
+        # New functions for templating can be registered here.
         template = Template(config_file.read())
         template.globals["timestamp"] = time_now()
         template.globals["project_root"] = project_root()
         template.globals["git_tag"] = git_tag()
         template.globals["influx_token"] = args.influx_token
         configuration = json.loads(template.render())
-    assert configuration, "Could not load configuration file!"
+    if not configuration:
+        log.error("Could not load configuration file!")
+        exit(1)
     log.debug("Configuration loaded!")
 
-    # TODO add logfile path and level to configurations,
-    #  then initialize a file logger!
+    # Initialize file loggers.
+    if "LOG" in configuration:
+        for log_config in configuration["LOG"]:
+            log_level = log_config.get("level", "DEBUG")
+            # Default location is under the /logs directory in this repository.
+            log_path = log_config.get("path", os.path.join(project_root(), "logs"))
+            if not os.path.exists(log_path):
+                os.makedirs(os.path.dirname(log_path))
+            PipelineLogger.add_file_logger(log_level, log_path)
 
+    # Initialize elements of the feature generation/processing pipeline.
+    # TODO Move these steps to a separate config processor!
     feature_stream = itertools.chain([])
-
     for data_source in configuration["DATA_SOURCES"]:
         loader_name = data_source["loader"]["class"]
         loader_class = globals()[loader_name]

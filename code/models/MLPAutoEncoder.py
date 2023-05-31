@@ -1,11 +1,11 @@
-from typing import Generator, Any, Optional, List
+from typing import Generator, Optional, List
 
 import numpy as np
 from sklearn.neural_network import MLPRegressor
 from sklearn.model_selection import train_test_split
 
 from models.IAnomalyDetectionModel import IAnomalyDetectionModel
-from pipeline_logger import PipelineLogger
+from common.pipeline_logger import PipelineLogger
 
 log = PipelineLogger.get_logger()
 

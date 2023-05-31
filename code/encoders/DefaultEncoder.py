@@ -8,7 +8,7 @@ from common.functions import report_performance
 from encoders.IDataEncoder import IDataEncoder
 from common.features import IFeature, FeatureGenerator
 
-from pipeline_logger import PipelineLogger
+from common.pipeline_logger import PipelineLogger
 
 log = PipelineLogger.get_logger()
 

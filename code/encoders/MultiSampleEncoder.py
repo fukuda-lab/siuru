@@ -1,6 +1,6 @@
 import time
 
-from typing import Any, Dict, Union, Generator, Tuple, Optional, List
+from typing import Any, Dict, Generator, Tuple, Optional, List
 
 import numpy
 import numpy as np
@@ -10,7 +10,7 @@ from common.functions import report_performance
 from encoders.IDataEncoder import IDataEncoder
 from common.features import IFeature, FeatureGenerator
 
-from pipeline_logger import PipelineLogger
+from common.pipeline_logger import PipelineLogger
 
 log = PipelineLogger.get_logger()
 

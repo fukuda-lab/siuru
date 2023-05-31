@@ -7,7 +7,7 @@ from common.functions import report_performance
 from dataloaders.IDataLoader import IDataLoader
 from common.features import IFeature, PacketFeature
 
-from pipeline_logger import PipelineLogger
+from common.pipeline_logger import PipelineLogger
 
 log = PipelineLogger.get_logger()
 

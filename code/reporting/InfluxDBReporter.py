@@ -6,7 +6,7 @@ from influxdb_client.client.exceptions import InfluxDBError
 
 from common.features import PacketFeature, IFeature, PredictionField
 
-import pipeline_logger
+from common import pipeline_logger
 from reporting.IReporter import IReporter
 
 log = pipeline_logger.PipelineLogger.get_logger()
