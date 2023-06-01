@@ -55,7 +55,7 @@ def main():
             log_level = log_config.get("level", "DEBUG")
             # Default location is under the /logs directory in this repository.
             log_path = log_config.get("path", os.path.join(project_root(), "logs"))
-            if not os.path.exists(log_path):
+            if not os.path.exists(os.path.dirname(log_path)):
                 os.makedirs(os.path.dirname(log_path))
             PipelineLogger.add_file_logger(log_level, log_path)
 

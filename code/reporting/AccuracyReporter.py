@@ -2,6 +2,7 @@ from collections import defaultdict
 from typing import Dict, Any, List
 
 from common.features import IFeature, PredictionField
+from common.pipeline_logger import PipelineLogger
 from reporting.IReporter import IReporter
 
 
@@ -40,20 +41,17 @@ class AccuracyReporter(IReporter):
         #             f"{self.model_instance.feature_importances_[idx]:6.4f}"
         #         )
 
-        print()
-        print("Accuracy report:")
-        print("---")
+        log = PipelineLogger.get_logger()
         for model in self.correct_classifications_per_model.keys():
-            print(model)
             acc = self.correct_classifications_per_model[model] / (
                 self.correct_classifications_per_model[model]
                 + self.false_classifications_per_model[model]
             )
-            print(f"Correct: {self.correct_classifications_per_model[model]}")
-            print(f"False: {self.false_classifications_per_model[model]}")
-            print(f"Accuracy: {acc}")
-            print("---")
-            print()
+            log.info(f"\n---\nAccuracy report\n"
+                     f"Model: {model}\n"
+                     f"Correct: {self.correct_classifications_per_model[model]}\n"
+                     f"False: {self.false_classifications_per_model[model]}\n"
+                     f"Accuracy: {acc}\n---")
 
     @staticmethod
     def input_signature() -> List[IFeature]:
