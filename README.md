@@ -82,6 +82,14 @@ ask me for a reference.
 
 ## Quickstart with Docker
 
+### Setting up the repository
+
+After cloning the repository, make sure to initialize the submodules (PcapPlusPlus):
+
+```bash
+git submodule update --init --recursive
+```
+
 ### Build the container
 
 This automatic build is a quick alternative to manually setting up a Python environment
