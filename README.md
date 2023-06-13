@@ -171,21 +171,18 @@ In addition, the following dependencies are needed:
 sudo apt install libpcap-dev
 ```
 
-Build and install PcapPlusPlus as follows:
+Build and install PcapPlusPlus, then build the feature extractor as follows:
 
 ```bash
 cd code/cpp-extract-features/PcapPlusPlus
 cmake -S . -B build
 cmake --build build
 sudo cmake --install build
-```
 
-Then run from repository root:
-
-```bash
-mkdir cmake-build-debug && cd cmake-build-debug
-cmake ..
-cmake --build .
+cd ..
+mkdir cmake-build && cd cmake-build
+cmake ../..
+cmake --build . --config Release
 sudo setcap cap_net_raw+ep $(pwd)/pcap-feature-extraction
 ```
 
@@ -208,8 +205,7 @@ As a result of successful training, we will have a random forest classifier stor
 
 ```bash
 cd code
-python IoT-AD.py \
--c </project/root>/configurations/examples/flow-based-rf-train.json.jinja
+python IoT-AD.py -c ../configurations/examples/flow-based-rf-train.json.jinja
 ```
 
 ### Running anomaly detection

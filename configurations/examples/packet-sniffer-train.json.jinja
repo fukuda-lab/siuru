@@ -12,7 +12,7 @@
                         "-c", "10000000", "-G", "60", "-w", "/pcap/packets-%F-%T.pcap",
                         "\"dst port ${DESTINATION_PORT}\"", "-i", "any", "-Z", "root"
                     ],
-                    "preprocessor_path": "{{ project_root }}/cmake-build-debug/pcap-feature-extraction"
+                    "preprocessor_path": "{{ project_root }}/code/cpp-extract-features/cmake-build/pcap-feature-extraction"
                 }
             },
             "preprocessors": [
