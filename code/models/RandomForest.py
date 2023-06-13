@@ -68,9 +68,6 @@ class RandomForestModel(IAnomalyDetectionModel):
     def load(self):
         self.model_instance = load(self.store_file)
 
-    def predict_array(self, X):
-        return self.model_instance.predict(X)
-
     def predict(self, features, encoded_data, **kwargs):
         # Requirements for encoded data:
         #

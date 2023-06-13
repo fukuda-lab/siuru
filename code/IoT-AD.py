@@ -93,7 +93,8 @@ def main():
     model_name = model_specification["class"]
     model_class = globals()[model_name]
     model_instance: IAnomalyDetectionModel = model_class(
-        full_config_json=json.dumps(configuration, indent=4), **model_specification
+        full_config_json=json.dumps(configuration, indent=4),
+        **model_specification
     )
 
     encoder_name = model_specification["encoder"]["class"]

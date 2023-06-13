@@ -17,6 +17,27 @@ class IAnomalyDetectionModel(ABC):
         full_config_json: Optional[str] = None,
         **kwargs,
     ):
+        """
+        Generic interface for anomaly detection models with storage and loading logic.
+
+        :param model_name: Name of the model. Will be used as the name of the storage
+            file (must exist in prediction mode) and for tagging the prediction.
+        :param train_new_model: If true, data will be passed to the train() function
+            and a new model is created. Otherwise, the model must exist under the
+            provided path and data will be passed to the predict() function.
+        :param skip_saving_model: Train a model, but do not store it. Can be used to
+            test the training pipeline. train_new_model must be set to true for this
+            parameter to take effect.
+        :param model_storage_base_path: The base path in the project where models
+            will be stored or searched for.
+        :param model_relative_path: Path relative to model_storage_base path where the
+            trained model is stored or loaded.
+        :param full_config_json: Configuration file for the pipeline, used to provide
+            parameters to models. The config will be stored along with any newly trained
+            model if skip_saving_model is not set.
+        :param kwargs: Optional arguments that can be used to pass additional parameters
+            to the model implementation.
+        """
         self.model_name = model_name
         self.train_new_model = train_new_model
         self.skip_saving_model = skip_saving_model
