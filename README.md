@@ -1,7 +1,7 @@
-# IoT anomaly detection (IoT-AD) internship
+# Scalable IoT Usage Research Utility (SIURU)
 
-This repository contains materials and code from NII internship focused on creating a 
-framework for IoT anomaly detection.
+A framework for IoT anomaly detection, created at the National Institute of Informatics
+during the research internship program.
 
 ## System architecture
 
@@ -151,6 +151,14 @@ installed and the C++ feature extractor component built before running the pipel
 
 The commands below are meant to be run on Ubuntu 20.04.
 
+### Setting up the repository
+
+After cloning the repository, make sure to initialize the submodules (PcapPlusPlus):
+
+```bash
+git submodule update --init --recursive
+```
+
 ### Python environment
 
 I recommend to set up a Python virtual environment, e.g. pyenv. The Python
@@ -199,7 +207,7 @@ files.
 
 The example below assumes that we have stored the following:
 1. data for anomaly detection as described above,
-2. built the C++ feature extractor using CMake under `</project/root>/cmake-build-debug`.
+2. built the C++ feature extractor using CMake under `<code/cpp-extract-features/cmake-build`.
 
 As a result of successful training, we will have a random forest classifier stored under `</project/root>/models/example-flow-based-rf/flow-based-rf-train.pickle`.
 
@@ -215,7 +223,7 @@ parameters.
 
 The sample command below assumes that we have the following:
 1. data for anomaly detection as described above,
-2. built the C++ feature extractor using CMake under `</project/root>/cmake-build-debug`,
+2. built the C++ feature extractor using CMake under `<code/cpp-extract-features/cmake-build`,
 3. trained and stored the model under `</project/root>/models/example-flow-based-rf/flow-based-rf-train.pickle` (see previous section),
 4. configured InfluxDB as seen below, including the generated token.
 
