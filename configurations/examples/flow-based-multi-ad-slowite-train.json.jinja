@@ -1,0 +1,63 @@
+{
+    "DESCRIPTION": [
+        "Train an autoencoder using a segment from MQTTset's benign traffic. ",
+        "Uses window-based flow features at 10 ms windows."
+    ],
+    "DATA_SOURCES": [
+        {
+            "type": "dataset",
+            "loader": {
+                "class": "PcapFileLoader",
+                "kwargs": {
+                    "filepath": "{{ project_root }}/data/MQTTset/Data/PCAP/capture_custom_1h.pcap",
+                    "preprocessor_path": "{{ project_root }}/cmake-build-debug/pcap-feature-extraction"
+                }
+            },
+            "preprocessors": [
+                {
+                    "class": "CppPacketProcessor",
+                    "kwargs": {}
+                },
+                {
+                    "class": "WindowFlowFeatureProcessor",
+                    "kwargs": {
+                        "window_size_ms": 10
+                    }
+                }
+            ]
+        }
+    ],
+    "MODEL":
+    {
+        "class": "MLPAutoEncoderModel",
+        "train_new_model": true,
+        "skip_saving_model": false,
+        "model_name": "example-flow-based-multi-encoded-ae-benign",
+        "model_storage_base_path": "{{ project_root }}/models",
+        "encoder":
+        {
+            "class": "MultiSampleEncoder",
+            "kwargs": {
+                "feature_filter": [
+                    "window_flow_pkt_count",
+                    "window_flow_sum_pkt_size",
+                    "window_flow_avg_pkt_size",
+                    "window_flow_inter_arrival_avg"
+                ]
+            }
+        }
+    },
+    "OUTPUT": [
+        {
+            "class": "DistanceReporter",
+            "kwargs": {}
+        }
+    ],
+    "LOG": [
+        {
+            "level": "DEBUG",
+            "path": "{{ project_root }}/models/example-flow-based-multi-encoded-ae-benign/{{ timestamp }}-training-log.txt"
+        }
+    ],
+    "VERSION": "{{ git_tag }}"
+}

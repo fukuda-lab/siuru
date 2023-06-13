@@ -1,9 +1,11 @@
-from typing import Generator, Optional, List
+from typing import Any, Dict, Generator, Optional, List, Tuple, Union
 
+import numpy
 import numpy as np
 from sklearn.neural_network import MLPRegressor
-from sklearn.model_selection import train_test_split
+from joblib import dump, load
 
+from common.features import IFeature, PredictionField
 from models.IAnomalyDetectionModel import IAnomalyDetectionModel
 from common.pipeline_logger import PipelineLogger
 
@@ -17,44 +19,47 @@ class MLPAutoEncoderModel(IAnomalyDetectionModel):
 
     def __init__(
         self,
-        model_name,
-        train_new_model=True,
-        skip_saving_model=False,
-        model_storage_base_path=None,
-        model_relative_path=None,
+        filter_label: Optional[int] = None,
         **kwargs,
     ):
-        super().__init__(
-            model_name,
-            train_new_model,
-            skip_saving_model,
-            model_storage_base_path,
-            model_relative_path,
-            **kwargs,
-        )
-        self.model_instance = None
+        """
+        TODO: multi-AE setup where PredictionField.GROUND_TRUTH label of the data
+         will be used to split the data into multiple training sets, then training
+         multiple AEs to each predict their own class only.
 
-    # TODO Doesn't work - update to use the new interface!
+        :param filter_label:
+        :param kwargs: Arguments for the superclass constructor.
+        """
+        self.model_instance = None
+        self.filter_label = filter_label
+        super().__init__(**kwargs)
+
     def train(
         self,
-        true_features: Generator[np.array, None, None],
-        false_features: Generator[np.array, None, None],
-        feature_names: Optional[List[str]] = None,
+        data: Generator[Tuple[Dict[IFeature, Any], np.ndarray], None, None],
         **kwargs,
     ):
         log.info("Training an MLP autoencoder.")
-        # TODO Find ways to work with the generators to save memory.
-        true_feat_list = list(true_features)
-        false_feat_list = list(false_features)
-        log.info(f"Number of true (target) samples: {len(true_feat_list)}")
-        log.info(
-            f"Number of false (anomalous) samples for testing: {len(false_feat_list)}"
-        )
+        concatenated_data_array = None
 
-        X_train, X_test = train_test_split(
-            true_feat_list, test_size=0.1, random_state=8
-        )
-        ae = MLPRegressor(
+        for features, encoding in data:
+            if isinstance(features, list):
+                if self.filter_label:
+                    # TODO filter xarray by GROUND_TRUTH filter.
+                    pass
+                elif not concatenated_data_array:
+                    concatenated_data_array = encoding
+                else:
+                    concatenated_data_array = numpy.concatenate(
+                        (concatenated_data_array, encoding),
+                        axis=0,
+                    )
+            else:
+                # TODO handle individually passed samples.
+                pass
+
+        # TODO make model parameters configurable.
+        self.model_instance = MLPRegressor(
             alpha=1e-15,
             hidden_layer_sizes=[
                 25,
@@ -62,18 +67,39 @@ class MLPAutoEncoderModel(IAnomalyDetectionModel):
                 25,
                 2,
                 25,
-                50,  # p.time(features[PacketFeature.TIMESTAMP].isoformat(timespec="nanoseconds"))
+                50,
                 25,
             ],
             random_state=1,
             max_iter=10000,
         )
-        ae.fit(X_train, X_train)
-        true_vs_pred = map(lambda x, y: abs(x - y), X_test, ae.predict(X_test))
-        log.info(f"True feature avg diff: {sum(sum(true_vs_pred)) / len(X_test)}")
-        false_vs_pred = map(
-            lambda x, y: abs(x - y), false_feat_list, ae.predict(false_feat_list)
-        )
-        log.info(
-            f"False feature avg diff: {sum(sum(false_vs_pred)) / len(false_feat_list)}"
-        )
+
+        self.model_instance.fit(concatenated_data_array, concatenated_data_array)
+        if not self.skip_saving_model:
+            dump(self.model_instance, self.store_file)
+
+    def load(self):
+        self.model_instance = load(self.store_file)
+        if not self.model_instance:
+            log.error(f"Failed to load model from: {self.store_file}")
+
+    def predict(
+        self,
+        features: Union[Dict[IFeature, Any], List[Dict[IFeature, Any]]],
+        encoded_data: Any,
+        **kwargs,
+    ) -> Generator[Dict[IFeature, Any], None, None]:
+
+        prediction = self.model_instance.predict(encoded_data)
+
+        if isinstance(features, list):
+            # Handle the prediction for multi-sample encoding.
+            for i, sample in enumerate(features):
+                sample[PredictionField.MODEL_NAME] = self.model_name
+                sample[PredictionField.OUTPUT_DISTANCE] = sum(abs(prediction[i]))
+                yield sample
+
+        else:
+            features[PredictionField.MODEL_NAME] = self.model_name
+            features[PredictionField.OUTPUT_BINARY] = prediction[0]
+            yield features

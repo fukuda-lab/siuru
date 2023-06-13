@@ -76,6 +76,7 @@ class PredictionField(str, enum.Enum):
     OUTPUT_BINARY = "output_binary"
     OUTPUT_CONFIDENCE = "output_confidence"
     OUTPUT_MULTILABEL = "output_multilabel"
+    OUTPUT_DISTANCE = "output_distance"
     GROUND_TRUTH = "ground_truth"
 
 
@@ -85,12 +86,16 @@ IFeature = NewType(
     "IFeature", Union[PacketFeature, HostFeature, FlowFeature, PredictionField]
 )
 
+# TODO can these be specified further? Otherwise, might just as well use 'Any'.
+DataType = NewType("DataType", Any)
+EncodedData = NewType("EncodedData", Any)
+
 FeatureGenerator = NewType(
-    "FeatureGenerator", Generator[Dict[IFeature, Any], None, None]
+    "FeatureGenerator", Generator[Dict[IFeature, DataType], None, None]
 )
 
 LabeledFeatureGenerator = NewType(
-    "LabeledFeatureGenerator", Generator[Tuple[Dict[IFeature, Any], Any], None, None]
+    "LabeledFeatureGenerator", Generator[Tuple[Dict[IFeature, DataType], EncodedData], None, None]
 )
 
 FlowIdentifier = NewType("FlowIdentifier", Tuple[str, str, int, int, str])
