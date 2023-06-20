@@ -101,7 +101,7 @@ siuru:latest \
 In the interactive Docker session, run:
 
 ```bash
-python3 code/IoT-AD.py -c /configurations/examples/flow-based-rf-train.json.jinja
+python3 code/IoT-AD.py -c /configurations/examples/flow-based-multi-rf-train.json.jinja
 ```
 
 The model will be stored under ``</project/root>/models/example-flow-based-rf``.
@@ -112,7 +112,7 @@ In an interactive session, run the following command, replacing the placeholder 
 
 ```bash
 python3 code/IoT-AD.py \
--c /configurations/examples/flow-based-rf-test.json.jinja \
+-c /configurations/examples/flow-based-multi-rf-train.json.jinja \
 --influx-token <token>
 ```
 
@@ -196,7 +196,7 @@ The sample command below assumes that we have the following:
 ```bash
 cd code
 python IoT-AD.py \
--c </project/root>/configurations/examples/flow-based-rf-test.json.jinja \
+-c </project/root>/configurations/examples/flow-based-multi-rf-train.json.jinja \
 --influx-token <token>
 ```
 

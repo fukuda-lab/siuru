@@ -30,7 +30,11 @@ RUN cd /code/cpp-extract-features/PcapPlusPlus && \
     cmake --build build-docker && \
     cmake --install build-docker
 
-RUN mkdir cmake-build-debug && \
-    cd cmake-build-debug && \
-    cmake ../code && \
-    cmake --build .
+RUN cd /code/cpp-extract-features && \
+    mkdir cmake-build && \
+    cd cmake-build && \
+    cmake ../.. && \
+    cmake --build . --config Release && \
+    setcap cap_net_raw+ep $(pwd)/pcap-feature-extraction
+
+# TODO test if the setcap command is needed for live traffic capture in Docker.
