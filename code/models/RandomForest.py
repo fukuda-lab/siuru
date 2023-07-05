@@ -57,7 +57,7 @@ class RandomForestModel(IAnomalyDetectionModel):
                     )
             else:
                 labels.append(features[PredictionField.GROUND_TRUTH])
-                encoded_features.append(encoding)
+                encoded_features.append(encoding[0])
 
         self.model_instance = RandomForestClassifier()
         self.model_instance.fit(encoded_features, labels)
