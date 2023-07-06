@@ -26,6 +26,7 @@ def main():
     """
 
     pipeline_execution_start = time.process_time_ns()
+    log_time_tag = time_now()
 
     # Argument parser initialization.
     parser = argparse.ArgumentParser()
@@ -41,7 +42,7 @@ def main():
     with open(config_path) as config_file:
         # New functions for templating can be registered here.
         template = Template(config_file.read())
-        template.globals["timestamp"] = time_now()
+        template.globals["timestamp"] = log_time_tag
         template.globals["project_root"] = project_root()
         template.globals["git_tag"] = git_tag()
         template.globals["influx_token"] = args.influx_token
@@ -59,7 +60,8 @@ def main():
         for log_config in configuration["LOG"]:
             log_level = log_config.get("level", "DEBUG")
             # Default location is under the /logs directory in this repository.
-            log_path = log_config.get("path", os.path.join(project_root(), "logs"))
+            log_path = log_config.get("path", os.path.join(project_root(), "logs", "other",
+                                                           f"{log_time_tag}-log.txt"))
             if not os.path.exists(os.path.dirname(log_path)):
                 os.makedirs(os.path.dirname(log_path))
             PipelineLogger.add_file_logger(log_level, log_path)
