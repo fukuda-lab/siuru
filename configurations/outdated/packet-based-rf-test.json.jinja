@@ -36,33 +36,7 @@
             "loader": {
                 "class": "PcapFileLoader",
                 "kwargs": {
-                    "filepath": "{{ project_root }}/data/MQTTset/Data/PCAP/capture_malariaDoS.pcap",
-                    "preprocessor_path": "{{ project_root }}/code/cpp-extract-features/cmake-build/pcap-feature-extraction"
-                }
-            },
-            "preprocessors": [
-                {
-                    "class": "CppPacketProcessor",
-                    "kwargs": {}
-                },
-                {
-                    "class": "HostFeatureProcessor",
-                    "kwargs": {}
-                },
-                {
-                    "class": "FileLabelProcessor",
-                    "kwargs": {
-                        "label_value": 1
-                    }
-                }
-            ]
-        },
-        {
-            "type": "dataset",
-            "loader": {
-                "class": "PcapFileLoader",
-                "kwargs": {
-                    "filepath": "{{ project_root }}/data/MQTTset/Data/PCAP/capture_custom_1h.pcap",
+                    "filepath": "{{ project_root }}/data/MQTTset/Data/PCAP/capture_custom_5min.pcap",
                     "preprocessor_path": "{{ project_root }}/code/cpp-extract-features/cmake-build/pcap-feature-extraction"
                 }
             },
@@ -96,7 +70,6 @@
                 "class": "DefaultEncoder",
                 "kwargs": {
                     "feature_filter": [
-                        "ground_truth",
                         "ip_size",
                         "tcp_cwr",
                         "tcp_ece",

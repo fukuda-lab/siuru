@@ -1,6 +1,6 @@
 {
     "DESCRIPTION": [
-        "Train a packet-based random forest classifier. slowite and malariaDoS ",
+        "Test a packet-based random forest classifier. slowite and malariaDoS ",
         "attack data from MQTTset is labeled as 1 and a segment from MQTTset's ",
         "benign traffic as 0. Uses packet size and TCP flags as features."
     ],
@@ -36,33 +36,7 @@
             "loader": {
                 "class": "PcapFileLoader",
                 "kwargs": {
-                    "filepath": "{{ project_root }}/data/MQTTset/Data/PCAP/capture_malariaDoS.pcap",
-                    "preprocessor_path": "{{ project_root }}/code/cpp-extract-features/cmake-build/pcap-feature-extraction"
-                }
-            },
-            "preprocessors": [
-                {
-                    "class": "CppPacketProcessor",
-                    "kwargs": {}
-                },
-                {
-                    "class": "HostFeatureProcessor",
-                    "kwargs": {}
-                },
-                {
-                    "class": "FileLabelProcessor",
-                    "kwargs": {
-                        "label_value": 1
-                    }
-                }
-            ]
-        },
-        {
-            "type": "dataset",
-            "loader": {
-                "class": "PcapFileLoader",
-                "kwargs": {
-                    "filepath": "{{ project_root }}/data/MQTTset/Data/PCAP/capture_custom_1h.pcap",
+                    "filepath": "{{ project_root }}/data/MQTTset/Data/PCAP/capture_custom_5min.pcap",
                     "preprocessor_path": "{{ project_root }}/code/cpp-extract-features/cmake-build/pcap-feature-extraction"
                 }
             },
@@ -85,31 +59,36 @@
         }
     ],
     "MODEL":
+    {
+        "class": "MLPAutoEncoderModel",
+        "train_new_model": false,
+        "skip_saving_model": false,
+        "model_name": "example-packet-based-ae",
+        "model_storage_base_path": "{{ project_root }}/models",
+        "encoder":
         {
-            "class": "RandomForestModel",
-            "train_new_model": true,
-            "skip_saving_model": false,
-            "model_name": "example-packet-based-rf",
-            "model_storage_base_path": "{{ project_root }}/models",
-            "encoder":
-            {
-                "class": "DefaultEncoder",
-                "kwargs": {
-                    "feature_filter": [
-                        "ground_truth",
-                        "ip_size",
-                        "tcp_cwr",
-                        "tcp_ece",
-                        "tcp_urg",
-                        "tcp_ack",
-                        "tcp_psh",
-                        "tcp_rst",
-                        "tcp_syn",
-                        "tcp_fin"
-                    ]
-                }
+            "class": "MultiSampleEncoder",
+            "kwargs": {
+                "feature_filter": [
+                    "ip_size",
+                    "tcp_cwr",
+                    "tcp_ece",
+                    "tcp_urg",
+                    "tcp_ack",
+                    "tcp_psh",
+                    "tcp_rst",
+                    "tcp_syn",
+                    "tcp_fin"
+                ]
             }
-        },
+        }
+    },
+    "OUTPUT": [
+        {
+            "class": "DistanceReporter",
+            "kwargs": {}
+        }
+    ],
     "CPP_FEATURE_EXTRACTOR": "{{ project_root }}/code/cpp-extract-features/cmake-build/pcap-feature-extraction",
     "VERSION": "{{ git_tag }}"
 }
