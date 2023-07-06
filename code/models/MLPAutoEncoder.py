@@ -89,7 +89,6 @@ class MLPAutoEncoderModel(IAnomalyDetectionModel):
         encoded_data: Any,
         **kwargs,
     ) -> Generator[Dict[IFeature, Any], None, None]:
-
         prediction = self.model_instance.predict(encoded_data)
 
         if isinstance(features, list):

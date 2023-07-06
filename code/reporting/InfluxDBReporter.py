@@ -68,21 +68,31 @@ class InfluxDBReporter(IReporter):
         p = Point(self.measurement_name)
         p.tag(PredictionField.MODEL_NAME.value, features[PredictionField.MODEL_NAME])
 
-        is_binary_classification = PredictionField.OUTPUT_BINARY in features and PredictionField.GROUND_TRUTH in features
+        is_binary_classification = (
+            PredictionField.OUTPUT_BINARY in features
+            and PredictionField.GROUND_TRUTH in features
+        )
         is_autoencoder_distance = PredictionField.OUTPUT_DISTANCE in features
 
         if is_binary_classification:
             p.field(
-                PredictionField.OUTPUT_BINARY.value, features[PredictionField.OUTPUT_BINARY]
+                PredictionField.OUTPUT_BINARY.value,
+                features[PredictionField.OUTPUT_BINARY],
             )
             p.field(
-                PredictionField.GROUND_TRUTH.value, features[PredictionField.GROUND_TRUTH]
+                PredictionField.GROUND_TRUTH.value,
+                features[PredictionField.GROUND_TRUTH],
             )
         elif is_autoencoder_distance:
-            p.field(PredictionField.OUTPUT_DISTANCE.value, features[PredictionField.OUTPUT_DISTANCE])
+            p.field(
+                PredictionField.OUTPUT_DISTANCE.value,
+                features[PredictionField.OUTPUT_DISTANCE],
+            )
         else:
-            raise NotImplementedError("Either binary output and ground truth, or "
-                                      "output distance field must be set by the model!")
+            raise NotImplementedError(
+                "Either binary output and ground truth, or "
+                "output distance field must be set by the model!"
+            )
 
         # Save packet timestamp as a field -- InfluxDB timestamp will be creation time.
         p.field("packet_timestamp", features[PacketFeature.TIMESTAMP])
@@ -103,7 +113,9 @@ class InfluxDBReporter(IReporter):
         self.write_api.flush()
         self.write_api.close()
 
-        report_performance(type(self).__name__, log, self.sample_count, self.sum_processing_time)
+        report_performance(
+            type(self).__name__, log, self.sample_count, self.sum_processing_time
+        )
 
     @staticmethod
     def input_signature():

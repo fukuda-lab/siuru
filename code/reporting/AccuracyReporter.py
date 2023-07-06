@@ -47,11 +47,13 @@ class AccuracyReporter(IReporter):
                 self.correct_classifications_per_model[model]
                 + self.false_classifications_per_model[model]
             )
-            log.info(f"\n---\nAccuracy report\n"
-                     f"Model: {model}\n"
-                     f"Correct: {self.correct_classifications_per_model[model]}\n"
-                     f"False: {self.false_classifications_per_model[model]}\n"
-                     f"Accuracy: {acc}\n---")
+            log.info(
+                f"\n---\nAccuracy report\n"
+                f"Model: {model}\n"
+                f"Correct: {self.correct_classifications_per_model[model]}\n"
+                f"False: {self.false_classifications_per_model[model]}\n"
+                f"Accuracy: {acc}\n---"
+            )
 
     @staticmethod
     def input_signature() -> List[IFeature]:

@@ -7,8 +7,7 @@ from typing import List
 
 from jinja2 import Template
 
-from common.functions import report_performance, time_now, project_root, \
-    git_tag
+from common.functions import report_performance, time_now, project_root, git_tag
 from dataloaders import *
 from models import *
 from preprocessors import *
@@ -52,7 +51,6 @@ def main():
         exit(1)
     log.debug("Configuration loaded!")
 
-
     class_initialization_start = time.process_time_ns()
 
     # Initialize file loggers.
@@ -60,8 +58,12 @@ def main():
         for log_config in configuration["LOG"]:
             log_level = log_config.get("level", "DEBUG")
             # Default location is under the /logs directory in this repository.
-            log_path = log_config.get("path", os.path.join(project_root(), "logs", "other",
-                                                           f"{log_time_tag}-log.txt"))
+            log_path = log_config.get(
+                "path",
+                os.path.join(
+                    project_root(), "logs", "other", f"{log_time_tag}-log.txt"
+                ),
+            )
             if not os.path.exists(os.path.dirname(log_path)):
                 os.makedirs(os.path.dirname(log_path))
             PipelineLogger.add_file_logger(log_level, log_path)
@@ -105,8 +107,7 @@ def main():
     model_name = model_specification["class"]
     model_class = globals()[model_name]
     model_instance: IAnomalyDetectionModel = model_class(
-        full_config_json=json.dumps(configuration, indent=4),
-        **model_specification
+        full_config_json=json.dumps(configuration, indent=4), **model_specification
     )
 
     # Initialize encoder class for the model. Encoders are model-specific to allow running multiple models simultaneously in the future, where each may require their own encoder instance.
@@ -176,9 +177,24 @@ def main():
 
     pipeline_stopping_time = time.process_time_ns()
 
-    report_performance("IoT-AD full pipeline", log, sample_count, time.process_time_ns() - pipeline_execution_start)
-    report_performance("IoT-AD from initialization", log, sample_count, time.process_time_ns() - class_initialization_start)
-    report_performance("IoT-AD from encoding", log, sample_count, time.process_time_ns() - encoding_start)
+    report_performance(
+        "IoT-AD full pipeline",
+        log,
+        sample_count,
+        time.process_time_ns() - pipeline_execution_start,
+    )
+    report_performance(
+        "IoT-AD from initialization",
+        log,
+        sample_count,
+        time.process_time_ns() - class_initialization_start,
+    )
+    report_performance(
+        "IoT-AD from encoding",
+        log,
+        sample_count,
+        time.process_time_ns() - encoding_start,
+    )
 
 
 if __name__ == "__main__":

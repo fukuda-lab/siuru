@@ -66,9 +66,10 @@ class IAnomalyDetectionModel(ABC):
 
     def save_configuration(self, config: str):
         config_file_path = os.path.join(os.path.dirname(self.store_file), "config.json")
-        assert not os.path.exists(config_file_path),\
-            f"Configuration path already exists: {config_file_path}" +\
-            "\nForgot to remove build artifacts from past run?"
+        assert not os.path.exists(config_file_path), (
+            f"Configuration path already exists: {config_file_path}"
+            + "\nForgot to remove build artifacts from past run?"
+        )
         with open(config_file_path, "w") as f:
             f.write(config)
 
