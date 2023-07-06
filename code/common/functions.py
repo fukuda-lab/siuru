@@ -25,11 +25,12 @@ def project_root():
     return os.path.abspath(os.path.join(__file__, "..", "..", ".."))
 
 
-def report_performance(tag, logger, packet_count, passed_time_ns):
+def report_performance(tag, logger, sample_count, passed_time_ns):
     logger.info(f"[{ tag }] Completed processing:")
-    logger.info(f" > { packet_count } packets")
-    logger.info(f" > { passed_time_ns } ns")
-    if packet_count:
-        logger.info(f" > { passed_time_ns / packet_count } ns/packet")
+    if sample_count:
+        logger.info(f" > { sample_count } samples")
     if passed_time_ns:
-        logger.info(f" > { packet_count / (passed_time_ns / 1000000000) } packets/s")
+        logger.info(f" > { passed_time_ns } ns")
+    if sample_count and passed_time_ns:
+        logger.info(f" > { passed_time_ns / sample_count } ns/sample")
+        logger.info(f" > { sample_count / (passed_time_ns / 1000000000) } packets/s")

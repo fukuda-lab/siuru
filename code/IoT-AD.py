@@ -7,7 +7,8 @@ from typing import List
 
 from jinja2 import Template
 
-from common.functions import time_now, project_root, git_tag
+from common.functions import report_performance, time_now, project_root, \
+    git_tag
 from dataloaders import *
 from models import *
 from preprocessors import *
@@ -24,17 +25,18 @@ def main():
     Run the IoT anomaly detection pipeline based on a configuration file.
     """
 
-    parser = argparse.ArgumentParser()
+    pipeline_execution_start = time.process_time_ns()
 
+    # Argument parser initialization.
+    parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--config-path", type=str, required=True)
     parser.add_argument("--influx-token", type=str, required=False, default="")
-
     log.debug("Parsing arguments.")
     args = parser.parse_args()
 
+    # Load configuration file that specifies pipeline components.
     config_path = os.path.abspath(args.config_path)
     assert os.path.exists(config_path), "Config file not found!"
-
     log.debug(f"Loading configuration from: {config_path}")
     with open(config_path) as config_file:
         # New functions for templating can be registered here.
@@ -49,6 +51,9 @@ def main():
         exit(1)
     log.debug("Configuration loaded!")
 
+
+    class_initialization_start = time.process_time_ns()
+
     # Initialize file loggers.
     if "LOG" in configuration:
         for log_config in configuration["LOG"]:
@@ -59,9 +64,11 @@ def main():
                 os.makedirs(os.path.dirname(log_path))
             PipelineLogger.add_file_logger(log_level, log_path)
 
-    # Initialize elements of the feature generation/processing pipeline.
-    # TODO Move these steps to a separate config processor!
+    # Feature stream is a Python generator object: https://wiki.python.org/moin/Generators
+    # It allows to process the samples memory-efficiently, avoiding the need to store all data in memory at the same time.
     feature_stream = itertools.chain([])
+
+    # Initialize data loaders classes corresponding to each component under DATA_SOURCES in configuration.
     for data_source in configuration["DATA_SOURCES"]:
         loader_name = data_source["loader"]["class"]
         loader_class = globals()[loader_name]
@@ -69,6 +76,7 @@ def main():
         loader: IDataLoader = loader_class(**data_source["loader"]["kwargs"])
         new_feature_stream = loader.get_features()
 
+        # Initialize preprocessors specific to the data sources. Allowing each data source to specify its own preprocessor means data from different storage formats and with different processing needs can be combined to train models or perform prediction.
         for preprocessor_specification in data_source["preprocessors"]:
             preprocessor_name = preprocessor_specification["class"]
             preprocessor_class = globals()[preprocessor_name]
@@ -80,6 +88,8 @@ def main():
 
         feature_stream = itertools.chain(feature_stream, new_feature_stream)
 
+    # If no model is specified, count the number of samples in the loaded data.
+    # Just a convenience function, might be removed later.
     if len(configuration["MODEL"]) == 0:
         log.info("No model specified - counting input data points:")
         count = 0
@@ -88,8 +98,8 @@ def main():
         log.info(f"{count} elements.")
         exit(0)
 
+    # Initialize model class based on the component specification in the configuration.
     model_specification = configuration["MODEL"]
-    # Initialize model from class name.
     model_name = model_specification["class"]
     model_class = globals()[model_name]
     model_instance: IAnomalyDetectionModel = model_class(
@@ -97,13 +107,18 @@ def main():
         **model_specification
     )
 
+    # Initialize encoder class for the model. Encoders are model-specific to allow running multiple models simultaneously in the future, where each may require their own encoder instance.
     encoder_name = model_specification["encoder"]["class"]
     encoder_class = globals()[encoder_name]
     encoder_instance: IDataEncoder = encoder_class(
         **model_specification["encoder"]["kwargs"]
     )
-
     log.info("Encoding features.")
+
+    # This moment is important for performance measurement because encoding is the first step
+    # where features are actually processed. Until here, the generator data has not been consumed, so no data processing needed to take place).
+    encoding_start = time.process_time_ns()
+
     encoded_feature_generator = encoder_instance.encode(feature_stream)
 
     # Sanity check - peek at the first sample, print its fields and encoded format.
@@ -114,24 +129,21 @@ def main():
     elif len(first_sample) == 2:  # Assure sample matches the intended signature.
         log.debug("Features of the first sample:")
         first_sample_data, _ = first_sample
-
         if isinstance(first_sample_data, list):
-            # This is a hacky way to support both lists of sample features
-            # (as encoded my MultiSampleEncoder) and a dict containing the
-            # features of a single sample.
-            # TODO make more elegant (or move the logging to the encoder)!
+            # Extract first sample from list as encoded by MultiSampleEncoder. Otherwise, the first_sample_data object is already a dict containing the features of a single sample.
             first_sample_data = first_sample_data[0]
         for k, v in first_sample_data.items():
             log.debug(f" | {k}: {v}")
 
     if model_specification["train_new_model"]:
         # Train the model.
-        start = time.perf_counter()
+        start = time.process_time_ns()
         model_instance.train(
             encoded_feature_generator, path_to_store=model_instance.store_file
         )
-        end = time.perf_counter()
-        log.info(f"Trained new model in {end - start} seconds.")
+        end = time.process_time_ns()
+        sample_count = 0  # Not supported during training yet.
+        report_performance("Training", log, sample_count, end - start)
 
     else:
         # Prediction time!
@@ -143,24 +155,28 @@ def main():
             reporter_instance = reporter_class(**output["kwargs"])
             reporter_instances.append(reporter_instance)
 
-        count = 0
-        start = time.perf_counter()
+        sample_count = 0
+        start = time.process_time_ns()
 
         for sample, encoding in encoded_feature_generator:
             for predicted_sample in model_instance.predict(sample, encoding):
                 for reporter_instance in reporter_instances:
                     reporter_instance.report(predicted_sample)
-                count += 1
+                sample_count += 1
+            if sample_count % 1000 == 0:
+                log.debug(f"Processed samples: {sample_count}")
+        end = time.process_time_ns()
+        report_performance("Predict + report", log, sample_count, end - start)
 
-        end = time.perf_counter()
-        packets_per_second = count / (end - start)
-        log.info(
-            f"Predicted and reported {count} samples in {end - start} seconds"
-            f" ({packets_per_second} packets/s)."
-        )
-
+        # Reporters may require special shutdown steps, for example disconnecting from remote database or printing summaries of the processing -- call the handle for each reporter.
         for reporter_instance in reporter_instances:
             reporter_instance.end_processing()
+
+    pipeline_stopping_time = time.process_time_ns()
+
+    report_performance("IoT-AD full pipeline", log, sample_count, time.process_time_ns() - pipeline_execution_start)
+    report_performance("IoT-AD from initialization", log, sample_count, time.process_time_ns() - class_initialization_start)
+    report_performance("IoT-AD from encoding", log, sample_count, time.process_time_ns() - encoding_start)
 
 
 if __name__ == "__main__":
