@@ -12,9 +12,8 @@ To ease the handling of the dataset, we extracted 5% of the original dataset via
 
 # CICIDS2017
 
-Only has flow features, but a lot of them.
-
 https://www.kaggle.com/datasets/cicdataset/cicids2017
+https://www.unb.ca/cic/datasets/ids-2017.html
 
 About:
 
