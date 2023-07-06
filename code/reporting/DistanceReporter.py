@@ -7,6 +7,14 @@ from reporting.IReporter import IReporter
 
 
 class DistanceReporter(IReporter):
+    """
+    Tracks the distance stored under PredictionField.OUTPUT_DISTANCE
+    by an unsupervised model such as an AutoEncoder.
+
+    Can only be used when PredictionField.GROUND_TRUTH is known!
+    Distances are split into groups by the labels, allowing comparisons
+    of the average encoding deviation between different classes.
+    """
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.distance_sum_per_model_and_label = defaultdict(lambda: 0)

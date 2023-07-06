@@ -5,13 +5,17 @@ set -o pipefail
 
 valid_args=true
 
-if [[ "$1" != "head-tail" && "$1" != "round-robin" ]]; then
+if (( $# == 0 )); then
     valid_args=false
-fi
-if [[ "$1" == "head-tail" && $# != 5 ]]; then
-    valid_args=false
-elif [[ "$1" == "round-robin" && $# != 6 ]]; then
-    valid_args=false
+else
+    if [[ "$1" != "head-tail" && "$1" != "round-robin" ]]; then
+        valid_args=false
+    fi
+    if [[ "$1" == "head-tail" && $# != 5 ]]; then
+        valid_args=false
+    elif [[ "$1" == "round-robin" && $# != 6 ]]; then
+        valid_args=false
+    fi
 fi
 
 if [[ $valid_args != "true" ]]; then
@@ -42,6 +46,9 @@ fi
 mode=$1
 pcap_path=$2
 output_path=$3
+
+# Save output files with the same extension as input.
+extension="${pcap_path##*.}"
 
 mkdir $output_path
 tmp_dir=$output_path/pcapsplitter-tmp
@@ -101,8 +108,18 @@ else
     echo "Flows in test set: ${#test_files[@]}" >> "$readme_file"
 fi
 
-mergecap -w $output_path/train.pcapng ${train_files[@]}
-mergecap -w $output_path/validation.pcapng ${validation_files[@]}
-mergecap -w $output_path/test.pcapng ${test_files[@]}
+# Only call mergecap if there are files to be merged. Skip if e.g.
+# no validation set was requested.
+if (( ${#train_files[@]} )); then
+    mergecap -w $output_path/train.$extension ${train_files[@]}
+fi
+
+if (( ${#validation_files[@]} )); then
+    mergecap -w $output_path/validation.$extension ${validation_files[@]}
+fi
+
+if (( ${#test_files[@]} )); then
+    mergecap -w $output_path/test.$extension ${test_files[@]}
+fi
 
 rm -r $tmp_dir

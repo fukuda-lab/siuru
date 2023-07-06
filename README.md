@@ -27,7 +27,7 @@ docker run -p 8086:8086 \
 influxdb:2.6.1 --reporting-disabled
 ```
 
-From the interface that starts under http://localhost:8086 by default, generate a token with read-write permissions to use in Grafana and when running `IoT-AD.py` with reporting enabled.
+From the interface that starts under http://localhost:8086 by default, generate a token (Load Data > API Tokens) with read-write permissions to use in Grafana and when running `IoT-AD.py` with reporting enabled.
 
 If you later wish to clear the sample data stored in InfluxDB, use the following recipe, replacing the token placeholder with your generated one:
 

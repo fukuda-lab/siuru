@@ -101,5 +101,5 @@ class MLPAutoEncoderModel(IAnomalyDetectionModel):
 
         else:
             features[PredictionField.MODEL_NAME] = self.model_name
-            features[PredictionField.OUTPUT_BINARY] = prediction[0]
+            features[PredictionField.OUTPUT_DISTANCE] = prediction[0]
             yield features
