@@ -27,10 +27,13 @@ class PcapFileLoader(IDataLoader):
         sum_processing_time = 0
         packet_count = 0
         process = subprocess.Popen(
-            pcap_call, stdout=subprocess.PIPE, universal_newlines=True
+            pcap_call, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True
         )
 
         while True:
+            if process.poll() and process.returncode:
+                log.error(process.stdout.readlines())
+                raise RuntimeError(f"PCAP feature extractor exited with error code {process.returncode}!")
             start_time_ref = time.process_time_ns()
             packet_features = {
                 PacketFeature.CPP_FEATURE_STRING: process.stdout.readline()

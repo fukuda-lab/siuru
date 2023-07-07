@@ -114,6 +114,7 @@ class MultiSampleEncoder(IDataEncoder):
             dims=["samples", "features"],
             coords={"features": self.feature_filter},
         )
+        self.created_array_count += 1
         sum_processing_time += time.process_time_ns() - start_time
         yield feature_dicts, encoding_array
 

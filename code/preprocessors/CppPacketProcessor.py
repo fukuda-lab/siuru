@@ -36,6 +36,7 @@ class CppPacketProcessor(IPreprocessor):
             PacketFeature.IP_DESTINATION_PORT,
             PacketFeature.PROTOCOL,
             PacketFeature.TIMESTAMP,
+            PacketFeature.IP_HEADER_SIZE,
             PacketFeature.IP_PACKET_SIZE,
             PacketFeature.TCP_CWR_FLAG,
             PacketFeature.TCP_ECE_FLAG,
@@ -45,6 +46,7 @@ class CppPacketProcessor(IPreprocessor):
             PacketFeature.TCP_RST_FLAG,
             PacketFeature.TCP_SYN_FLAG,
             PacketFeature.TCP_FIN_FLAG,
+            PacketFeature.TCP_HEADER_SIZE,
             PacketFeature.TCP_SEGMENT_SIZE,
         ]
 
@@ -56,7 +58,7 @@ class CppPacketProcessor(IPreprocessor):
         for f in features:
             start_time_ref = time.process_time_ns()
             parts = f[PacketFeature.CPP_FEATURE_STRING].rstrip().split(",")
-            if len(parts) != 16:
+            if len(parts) != len(self.output_signature()):
                 invalid_packet_count += 1
                 continue
 
@@ -66,16 +68,18 @@ class CppPacketProcessor(IPreprocessor):
             f[PacketFeature.IP_DESTINATION_PORT] = parts[3]
             f[PacketFeature.PROTOCOL] = parts[4]
             f[PacketFeature.TIMESTAMP] = int(parts[5])
-            f[PacketFeature.IP_PACKET_SIZE] = int(parts[6])
-            f[PacketFeature.TCP_CWR_FLAG] = int(parts[7])
-            f[PacketFeature.TCP_ECE_FLAG] = int(parts[8])
-            f[PacketFeature.TCP_URG_FLAG] = int(parts[9])
-            f[PacketFeature.TCP_ACK_FLAG] = int(parts[10])
-            f[PacketFeature.TCP_PSH_FLAG] = int(parts[11])
-            f[PacketFeature.TCP_RST_FLAG] = int(parts[12])
-            f[PacketFeature.TCP_SYN_FLAG] = int(parts[13])
-            f[PacketFeature.TCP_FIN_FLAG] = int(parts[14])
-            f[PacketFeature.TCP_SEGMENT_SIZE] = int(parts[15])
+            f[PacketFeature.IP_HEADER_SIZE] = int(parts[6])
+            f[PacketFeature.IP_PACKET_SIZE] = int(parts[7])
+            f[PacketFeature.TCP_CWR_FLAG] = int(parts[8])
+            f[PacketFeature.TCP_ECE_FLAG] = int(parts[9])
+            f[PacketFeature.TCP_URG_FLAG] = int(parts[10])
+            f[PacketFeature.TCP_ACK_FLAG] = int(parts[11])
+            f[PacketFeature.TCP_PSH_FLAG] = int(parts[12])
+            f[PacketFeature.TCP_RST_FLAG] = int(parts[13])
+            f[PacketFeature.TCP_SYN_FLAG] = int(parts[14])
+            f[PacketFeature.TCP_FIN_FLAG] = int(parts[15])
+            f[PacketFeature.TCP_HEADER_SIZE] = int(parts[16])
+            f[PacketFeature.TCP_SEGMENT_SIZE] = int(parts[17])
 
             sum_processing_time += time.process_time_ns() - start_time_ref
             valid_packet_count += 1

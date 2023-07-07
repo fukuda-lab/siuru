@@ -111,7 +111,7 @@ static void packet_to_features(pcpp::RawPacket* rawPacket, pcpp::PcapLiveDevice*
   auto ts_ns = rawPacket->getPacketTimeStamp().tv_sec*1000000000L + rawPacket->getPacketTimeStamp().tv_nsec;
 
   printf(
-    "%s,%s,%d,%d,%s,%ld,%zu,%hu,%hu,%hu,%hu,%hu,%hu,%hu,%hu,%zu\n",
+    "%s,%s,%d,%d,%s,%ld,%zu,%zu,%hu,%hu,%hu,%hu,%hu,%hu,%hu,%hu,%zu,%zu\n",
     src_ip.c_str(),
     dst_ip.c_str(),
     src_port,
@@ -119,6 +119,7 @@ static void packet_to_features(pcpp::RawPacket* rawPacket, pcpp::PcapLiveDevice*
     TCP_PROTO,
     ts_ns / 1000,
     ip_layer->getHeaderLen(),
+    ip_layer->getDataLen(),
     flag_cwr,
     flag_ece,
     flag_urg,
@@ -127,7 +128,8 @@ static void packet_to_features(pcpp::RawPacket* rawPacket, pcpp::PcapLiveDevice*
     flag_rst,
     flag_syn,
     flag_fin,
-    tcp_layer->getHeaderLen()
+    tcp_layer->getHeaderLen(),
+    tcp_layer->getDataLen()
   );
 }
 
