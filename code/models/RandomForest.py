@@ -49,7 +49,7 @@ class RandomForestModel(IAnomalyDetectionModel):
                 # xarray DataArray encodings.
                 for f in features:
                     labels.append(f[PredictionField.GROUND_TRUTH])
-                if not encoded_features:
+                if len(encoded_features) == 0:
                     encoded_features = encoding
                 else:
                     encoded_features = numpy.concatenate(

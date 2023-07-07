@@ -65,14 +65,14 @@ class IPreprocessor(ABC):
         pass
 ```
 
-The input and output signature functions are similar to the `feature_signature()` function of data loaders, but since data passes through preprocessors, separate signatures are needed for the input and output feature sets. The input signature can be considered a list of requirements for the preprocessor, while the output signature acts as a promise to provide certain features to downstream components.
+The input and output signature functions are similar to the `feature_signature()` function of data loaders, but since data passes through preprocessors, separate signatures are needed for the input and output feature sets. The input signature is essentially a list of feature requirements set by the preprocessor, while the output signature acts as a promise to provide certain features to downstream components.
 
-First, create a new template class `CSVLabelProcessor.py` and add the class to `code/preprocessors/__init__.py`. The last step is required for the reflection-based pipeline builder to find the class based on its name.
+First, create a new template class `KitsuneLabelProcessor.py` and add the class to `code/preprocessors/__init__.py`. The last step is required for the reflection-based pipeline builder to find the class based on its name.
 
 Then, specify the initialization steps. The preprocessor must know from which file the labels should be loaded, so we add a keyword argument:
 
 ```python
-class CSVLabelProcessor(IPreprocessor):
+class KitsuneLabelProcessor(IPreprocessor):
     def __init__(self, label_file: str):
         self.csv_reader = csv.reader(label_file)
 ```

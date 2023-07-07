@@ -1,4 +1,5 @@
 import enum
+import itertools
 from typing import NewType, Union, Dict, Any, Generator, Tuple
 
 
@@ -85,6 +86,16 @@ class PredictionField(str, enum.Enum):
 IFeature = NewType(
     "IFeature", Union[PacketFeature, HostFeature, FlowFeature, PredictionField]
 )
+
+
+def resolve_feature(feature_tag: str) -> IFeature:
+    feature_enums = [PacketFeature, HostFeature, FlowFeature, PredictionField]
+    f: IFeature
+    for f in itertools.chain(*feature_enums):
+        if feature_tag == f.value:
+            return f
+    return None
+
 
 # TODO can these be specified further? Otherwise, might just as well use 'Any'.
 DataType = NewType("DataType", Any)
