@@ -37,10 +37,13 @@ class MultiSampleEncoder(IDataEncoder):
             if the max_array_size is not reached before.
         """
         super().__init__(**kwargs)
-        self.feature_filter = [resolve_feature(f) for f in feature_filter]
-        log.info(f"Applying feature filter: {self.feature_filter}")
+        self.feature_filter = None
+        if feature_filter:
+            self.feature_filter = [resolve_feature(f) for f in feature_filter]
+            log.info(f"Applied feature filter: {[f.value for f in self.feature_filter]}")
         self.max_array_size = max_array_size
         self.max_time_window_ns = max_time_window_ms * 10**6
+        self.created_array_count = 0
 
     def encode(
         self, features: FeatureGenerator, **kwargs
@@ -57,9 +60,8 @@ class MultiSampleEncoder(IDataEncoder):
         packet_count = 0
         sum_processing_time = 0
 
-        first = True
         feature_dicts = []
-        encoding_array = None
+        array_to_encode = []
         last_published_time = time.process_time_ns()
 
         for sample in features:
@@ -68,46 +70,52 @@ class MultiSampleEncoder(IDataEncoder):
             # Feature dictionaries will be stored in a single list element.
             feature_dicts.append(sample)
 
-            # xarray is built by appending each feature's encoding one by one.
-            if first:
-                if not self.feature_filter:
-                    # All encoded samples will follow the first sample's feature scheme!
-                    self.feature_filter = list(sample.keys())
+            if not self.feature_filter:
+                # All encoded samples will follow the first sample's feature scheme!
+                self.feature_filter = list(sample.keys())
+                log.info(f"Applied feature filter: {[f.value for f in self.feature_filter]}")
 
-                encoding_array = xarray.DataArray(
-                    [
-                        [sample[f] for f in self.feature_filter],
-                    ],
-                    dims=["samples", "features"],
-                    coords={"features": self.feature_filter},
-                )
-                # encoding_array.reshape((1, len(self.feature_filter)))
-                first = False
-
-            else:
-                encoding_array = numpy.concatenate(
-                    (
-                        encoding_array,
-                        [
-                            [sample[f] for f in self.feature_filter],
-                        ],
-                    ),
-                    axis=0,
-                )
-
-            current_time = time.process_time_ns()
-            sum_processing_time += current_time - start_time
+            array_to_encode.append([sample[f] for f in self.feature_filter])
             packet_count += 1
+            current_time = time.process_time_ns()
 
-            if (
+            if len(array_to_encode) > 0 and ((
                 self.max_time_window_ns != 0
                 and current_time - last_published_time >= self.max_time_window_ns
             ) or (
                 self.max_array_size != 0 and len(feature_dicts) >= self.max_array_size
-            ):
+            )):
+                encoding_array = xarray.DataArray(
+                    array_to_encode,
+                    dims=["samples", "features"],
+                    coords={"features": self.feature_filter},
+                )
+
+                self.created_array_count += 1
+                last_published_time = current_time
+                array_to_encode = []
+
+                # Since yielding can pause further processing until next element is
+                # requested, add to current processing time before yielding.
+                sum_processing_time += time.process_time_ns() - start_time
                 yield feature_dicts, encoding_array
 
+                # Feature dict can only be reset after yielding the previous one.
+                feature_dicts = []
+
+            else:
+                # Still count the processing time, even if no yield happened.
+                sum_processing_time += time.process_time_ns() - start_time
+
         # When the samples run out, still publish the last array!
+        start_time = time.process_time_ns()
+        encoding_array = xarray.DataArray(
+            array_to_encode,
+            dims=["samples", "features"],
+            coords={"features": self.feature_filter},
+        )
+        sum_processing_time += time.process_time_ns() - start_time
         yield feature_dicts, encoding_array
 
+        log.info(f"Created {self.created_array_count} multi-encoded arrays.")
         report_performance(type(self).__name__, log, packet_count, sum_processing_time)

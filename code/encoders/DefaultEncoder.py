@@ -32,7 +32,7 @@ class DefaultEncoder(IDataEncoder):
         self.feature_filter = None
         if feature_filter:
             self.feature_filter = [resolve_feature(f) for f in feature_filter]
-        log.info(f"Applied feature filter: {self.feature_filter}")
+        log.info(f"Applied feature filter: {[f.value for f in self.feature_filter]}")
 
     def encode(
         self, features: FeatureGenerator, **kwargs
@@ -50,7 +50,7 @@ class DefaultEncoder(IDataEncoder):
             if not self.feature_filter:
                 # All encoded samples will follow the first sample's feature scheme!
                 self.feature_filter = list(sample.keys())
-                log.info(f"Applied feature filter: {self.feature_filter}")
+                log.info(f"Applied feature filter: {[f.value for f in self.feature_filter]}")
 
             encoding = np.fromiter(
                 [sample[f] for f in self.feature_filter],

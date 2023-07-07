@@ -167,7 +167,7 @@ def main():
                     reporter_instance.report(predicted_sample)
                 sample_count += 1
             if sample_count % 1000 == 0:
-                log.debug(f"Processed samples: {sample_count}")
+                log.debug(f"    Processed samples so far: {sample_count}")
         end = time.process_time_ns()
         report_performance("Predict + report", log, sample_count, end - start)
 
