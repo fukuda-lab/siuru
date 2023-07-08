@@ -27,15 +27,15 @@ if [[ $valid_args != "true" ]]; then
     echo ""
     echo "Usage: ./split_dataset.bash <head-tail|round-robin> <args ...>"
     echo "Args head-tail: <input-file> <output-dir> <%train> <%validation>"
-    echo "Args round-robin: <input-file> <output-dir> <#split> <#train> <#validation>"
+    echo "Args round-robin: <input-file> <output-dir> <#train> <#validation> <#test>"
     echo ""
     echo "head-tail: Writes the flows in input data to separate files (can be many!),"
     echo "then merges them into [train|validate|test].pcapng files in the output dir."
     echo "train.pcapng will contain the first <%train> percent of all created files,"
     echo "validation the next <%validation> percent, remaining ones will be in test."
     echo ""
-    echo "round-robin: Writes the packets to <#split> files, then merges them into"
-    echo "[train|validate|test].pcapng files in the output directory."
+    echo "round-robin: Writes the packets to <#train + #validation + #test> files,"
+    echo "then merges them into [train|validate|test].pcapng files in output directory."
     echo "train.pcapng will contain flows from the first <#train> files,"
     echo "validation the next <#validation> files, remaining ones will be in test."
     echo "The file for each flow is assigned circularly, hence the name round-robin."
@@ -59,10 +59,10 @@ mkdir $tmp_dir
 # written to one output file, separate from the other output files (usually file#0).
 
 if [[ "$mode" == "round-robin" ]]; then
-    split_count=$4
-    train_set=$5
-    validation_set=$6
-    test_set=$((split_count - train_set - validation_set))
+    train_set=$4
+    validation_set=$5
+    test_set=$6
+    split_count=$((train_set + validation_set + test_set))
 
     PcapSplitter -f $pcap_path -o $tmp_dir -m connection -p $split_count
 else
