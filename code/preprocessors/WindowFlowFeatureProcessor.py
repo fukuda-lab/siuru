@@ -2,9 +2,6 @@ import time
 from collections import defaultdict
 from typing import Dict
 
-import pandas as pd
-from pandas import Timestamp, Timedelta
-
 from common.features import (
     flow_identifier,
     PacketFeature as Packet,
@@ -23,19 +20,22 @@ class WindowFlowFeatureProcessor(IPreprocessor):
     Stores flow statistics during a time window every time a packet is processed.
     Yields if the last yield for the flow identifier was more than <window> ago.
     After yield, the values for the flow identifier are reset.
+
+    Note that the processor does not implement a sliding window: after a sample is
+    yielded, all statistics for the flow are reset.
     """
 
     def __init__(self, window_size_ms: int = 1000, **kwargs):
         self.overall_packet_counter = 0
         self.valid_packet_counter = 0
-        self.window_size = Timedelta(window_size_ms, unit="milliseconds")
+        # Save window sizes in microseconds as these are the timestamps
+        # returned from C++ packet processor.
+        self.window_size_micros = window_size_ms * 1000
         self.window_packet_count: Dict[FlowIdentifier, int] = defaultdict(lambda: 0)
         self.window_packet_size_sum: Dict[FlowIdentifier, int] = defaultdict(lambda: 0)
 
-        self.first_timestamp_after_yield: Dict[FlowIdentifier, Timestamp] = {}
-        self.last_timestamp: Dict[FlowIdentifier, Timestamp] = defaultdict(
-            lambda: Timestamp(0)
-        )
+        self.first_timestamp_after_yield: Dict[FlowIdentifier, int] = {}
+        self.last_timestamp: Dict[FlowIdentifier, int] = defaultdict(lambda: 0)
         self.window_sum_inter_arrival_times: Dict[FlowIdentifier, int] = defaultdict(
             lambda: 0
         )
@@ -48,12 +48,15 @@ class WindowFlowFeatureProcessor(IPreprocessor):
             start_time_ref = time.process_time_ns()
 
             flow_id: FlowIdentifier = flow_identifier(f)
-            timestamp = pd.Timestamp(f[Packet.TIMESTAMP], unit="us")
+            timestamp = f[Packet.TIMESTAMP]
 
             if flow_id not in self.first_timestamp_after_yield:
                 self.first_timestamp_after_yield[flow_id] = timestamp
 
-            if timestamp - self.first_timestamp_after_yield[flow_id] > self.window_size:
+            if timestamp - self.first_timestamp_after_yield[flow_id] > self.window_size_micros:
+
+                # Set new features for this sample based on packets in the window
+                # so far, excluding the current received one.
                 f[Flow.WINDOW_AVG_PACKET_SIZE] = (
                     self.window_packet_size_sum[flow_id]
                     / self.window_packet_count[flow_id]
@@ -65,11 +68,10 @@ class WindowFlowFeatureProcessor(IPreprocessor):
                 f[Flow.WINDOW_RECEIVED_PACKET_COUNT] = self.window_packet_count[flow_id]
                 f[Flow.WINDOW_SUM_PACKET_SIZE] = self.window_packet_size_sum[flow_id]
 
+                # Reset counters for this flow.
                 self.window_packet_count[flow_id] = 1
                 self.window_packet_size_sum[flow_id] = f[Packet.IP_PACKET_SIZE]
-                self.window_sum_inter_arrival_times[flow_id] = (
-                    timestamp - self.last_timestamp[flow_id]
-                ).value
+                self.window_sum_inter_arrival_times[flow_id] = timestamp - self.last_timestamp[flow_id]
                 self.last_timestamp[flow_id] = timestamp
                 self.first_timestamp_after_yield[flow_id] = timestamp
 
@@ -81,9 +83,8 @@ class WindowFlowFeatureProcessor(IPreprocessor):
                 # Process the packet, but yield nothing.
                 self.window_packet_count[flow_id] += 1
                 self.window_packet_size_sum[flow_id] += f[Packet.IP_PACKET_SIZE]
-                self.window_sum_inter_arrival_times[flow_id] += (
-                    timestamp - self.last_timestamp[flow_id]
-                ).value
+                if self.last_timestamp[flow_id] != 0:
+                    self.window_sum_inter_arrival_times[flow_id] += timestamp - self.last_timestamp[flow_id]
                 self.last_timestamp[flow_id] = timestamp
 
                 sum_processing_time += time.process_time_ns() - start_time_ref

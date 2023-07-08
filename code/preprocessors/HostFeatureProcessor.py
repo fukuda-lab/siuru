@@ -2,8 +2,6 @@ import time
 from collections import defaultdict
 from typing import Dict
 
-from pandas import Timestamp
-
 from common.features import (
     PacketFeature as Packet,
     HostFeature as Host,
@@ -25,8 +23,8 @@ class HostFeatureProcessor(IPreprocessor):
         self.packet_size_sum_from_host: Dict[str, int] = defaultdict(lambda: 0)
         self.packet_size_sum_to_host: Dict[str, int] = defaultdict(lambda: 0)
 
-        self.first_timestamp_from_host: Dict[str, Timestamp] = {}
-        self.last_timestamp_from_host: Dict[str, Timestamp] = {}
+        self.first_timestamp_from_host: Dict[str, int] = {}
+        self.last_timestamp_from_host: Dict[str, int] = {}
 
         self.sum_inter_arrival_times_from_host: Dict[str, int] = defaultdict(lambda: 0)
 
