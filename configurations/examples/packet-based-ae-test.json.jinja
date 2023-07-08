@@ -62,7 +62,6 @@
     {
         "class": "MLPAutoEncoderModel",
         "train_new_model": false,
-        "skip_saving_model": false,
         "model_name": "example-packet-based-ae",
         "model_storage_base_path": "{{ project_root }}/models",
         "encoder":
@@ -89,6 +88,11 @@
             "kwargs": {}
         }
     ],
-    "CPP_FEATURE_EXTRACTOR": "{{ project_root }}/code/cpp-extract-features/cmake-build/pcap-feature-extraction",
+    "LOG": [
+        {
+            "level": "DEBUG",
+            "path": "{{ project_root }}/logs/example-packet-based-ae/{{ timestamp }}-log.txt"
+        }
+    ],
     "VERSION": "{{ git_tag }}"
 }

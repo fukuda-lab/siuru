@@ -94,7 +94,6 @@
     {
         "class": "RandomForestModel",
         "train_new_model": false,
-        "skip_saving_model": true,
         "model_name": "example-flow-based-rf",
         "model_storage_base_path": "{{ project_root }}/models",
         "encoder":
@@ -114,6 +113,12 @@
         {
             "class": "AccuracyReporter",
             "kwargs": {}
+        }
+    ],
+    "LOG": [
+        {
+            "level": "DEBUG",
+            "path": "{{ project_root }}/logs/example-flow-based-rf/{{ timestamp }}-log.txt"
         }
     ],
     "VERSION": "{{ git_tag }}"

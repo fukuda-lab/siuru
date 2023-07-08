@@ -83,6 +83,11 @@
             }
         }
     },
-    "CPP_FEATURE_EXTRACTOR": "{{ project_root }}/code/cpp-extract-features/cmake-build/pcap-feature-extraction",
+    "LOG": [
+        {
+            "level": "DEBUG",
+            "path": "{{ project_root }}/logs/example-packet-based-ae/{{ timestamp }}-training-log.txt"
+        }
+    ],
     "VERSION": "{{ git_tag }}"
 }
