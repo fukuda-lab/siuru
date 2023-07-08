@@ -5,12 +5,11 @@
     ],
     "DATA_SOURCES": [
         {
-            "type": "dataset",
             "loader": {
                 "class": "PcapFileLoader",
                 "kwargs": {
                     "filepath": "{{ project_root }}/data/MQTTset/Data/PCAP/capture_custom_1h.pcap",
-                    "preprocessor_path": "{{ project_root }}/code/cpp-extract-features/cmake-build/pcap-feature-extraction"
+                    "packet_processor_path": "{{ project_root }}/code/cpp-extract-features/cmake-build/pcap-feature-extraction"
                 }
             },
             "preprocessors": [

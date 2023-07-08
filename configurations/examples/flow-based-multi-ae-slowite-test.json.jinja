@@ -1,16 +1,15 @@
 {
     "DESCRIPTION": [
-        "Test an autoencoder using a segment from MQTTset's benign traffic. ",
+        "Test an autoencoder using a segment from MQTTset's benign traffic and SlowITE, MalariaDoS attacks. ",
         "Uses window-based flow features at 10 ms windows."
     ],
     "DATA_SOURCES": [
         {
-            "type": "dataset",
             "loader": {
                 "class": "PcapFileLoader",
                 "kwargs": {
                     "filepath": "{{ project_root }}/data/MQTTset/Data/PCAP/slowite.pcap",
-                    "preprocessor_path": "{{ project_root }}/code/cpp-extract-features/cmake-build/pcap-feature-extraction"
+                    "packet_processor_path": "{{ project_root }}/code/cpp-extract-features/cmake-build/pcap-feature-extraction"
                 }
             },
             "preprocessors": [
@@ -33,12 +32,11 @@
             ]
         },
         {
-            "type": "dataset",
             "loader": {
                 "class": "PcapFileLoader",
                 "kwargs": {
                     "filepath": "{{ project_root }}/data/MQTTset/Data/PCAP/capture_malariaDoS.pcap",
-                    "preprocessor_path": "{{ project_root }}/code/cpp-extract-features/cmake-build/pcap-feature-extraction"
+                    "packet_processor_path": "{{ project_root }}/code/cpp-extract-features/cmake-build/pcap-feature-extraction"
                 }
             },
             "preprocessors": [
@@ -61,12 +59,11 @@
             ]
         },
         {
-            "type": "dataset",
             "loader": {
                 "class": "PcapFileLoader",
                 "kwargs": {
                     "filepath": "{{ project_root }}/data/MQTTset/Data/PCAP/capture_custom_1h.pcap",
-                    "preprocessor_path": "{{ project_root }}/code/cpp-extract-features/cmake-build/pcap-feature-extraction"
+                    "packet_processor_path": "{{ project_root }}/code/cpp-extract-features/cmake-build/pcap-feature-extraction"
                 }
             },
             "preprocessors": [

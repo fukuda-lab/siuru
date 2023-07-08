@@ -12,10 +12,10 @@ log = PipelineLogger.get_logger()
 
 
 class PcapFileLoader(IDataLoader):
-    def __init__(self, filepath: str, preprocessor_path: str, **kwargs):
+    def __init__(self, filepath: str, packet_processor_path: str, **kwargs):
         super().__init__(**kwargs)
         self.filepath = filepath
-        self.preprocessor_path = preprocessor_path
+        self.preprocessor_path = packet_processor_path
         log.info(f"[{ type(self).__name__ }] Reading from file: {self.filepath}")
 
     def get_features(
