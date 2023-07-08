@@ -19,7 +19,7 @@ from common.pipeline_logger import PipelineLogger
 log = PipelineLogger.get_logger()
 
 
-def main():
+def main(args_config_path, args_influx_token):
     """
     Run the IoT anomaly detection pipeline based on a configuration file.
     """
@@ -27,25 +27,21 @@ def main():
     pipeline_execution_start = time.process_time_ns()
     log_time_tag = time_now()
 
-    # Argument parser initialization.
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-c", "--config-path", type=str, required=True)
-    parser.add_argument("--influx-token", type=str, required=False, default="")
-    log.debug("Parsing arguments.")
-    args = parser.parse_args()
-
     # Load configuration file that specifies pipeline components.
-    config_path = os.path.abspath(args.config_path)
+    config_path = os.path.abspath(args_config_path)
     assert os.path.exists(config_path), "Config file not found!"
     log.debug(f"Loading configuration from: {config_path}")
     with open(config_path) as config_file:
-        # New functions for templating can be registered here.
-        template = Template(config_file.read())
-        template.globals["timestamp"] = log_time_tag
-        template.globals["project_root"] = project_root()
-        template.globals["git_tag"] = git_tag()
-        template.globals["influx_token"] = args.influx_token
-        configuration = json.loads(template.render())
+        if ".jinja" in config_path:
+            # New functions for templating can be registered here.
+            template = Template(config_file.read())
+            template.globals["timestamp"] = log_time_tag
+            template.globals["project_root"] = project_root()
+            template.globals["git_tag"] = git_tag()
+            template.globals["influx_token"] = args_influx_token
+            configuration = json.loads(template.render())
+        else:
+            configuration = json.loads(config_path)
     if not configuration:
         log.error("Could not load configuration file!")
         exit(1)
@@ -198,4 +194,12 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+
+    # Argument parser initialization.
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-c", "--config-path", type=str, required=True)
+    parser.add_argument("--influx-token", type=str, required=False, default="")
+    log.debug("Parsing arguments.")
+    args = parser.parse_args()
+
+    main(args.config_path, args.influx_token)
