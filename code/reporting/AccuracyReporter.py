@@ -1,5 +1,7 @@
-from collections import defaultdict
 from typing import Dict, Any, List
+
+from sklearn.metrics import accuracy_score, confusion_matrix, f1_score, precision_score, \
+    recall_score
 
 from common.features import IFeature, PredictionField
 from common.pipeline_logger import PipelineLogger
@@ -9,51 +11,31 @@ from reporting.IReporter import IReporter
 class AccuracyReporter(IReporter):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.correct_classifications_per_model = defaultdict(lambda: 0)
-        self.false_classifications_per_model = defaultdict(lambda: 0)
+        self.ground_truths = []
+        self.predicted_labels = []
 
     def report(self, features: Dict[IFeature, Any]):
-        name = features[PredictionField.MODEL_NAME]
-        if (
-            features[PredictionField.OUTPUT_BINARY]
-            == features[PredictionField.GROUND_TRUTH]
-        ):
-            self.correct_classifications_per_model[name] += 1
-        else:
-            self.false_classifications_per_model[name] += 1
+        self.ground_truths.append(features[PredictionField.GROUND_TRUTH])
+        self.predicted_labels.append(features[PredictionField.OUTPUT_BINARY])
 
     def end_processing(self):
-        # y_pred = self.model_instance.predict(X_test)
-        #
-        # cnf_matrix = confusion_matrix(y_test, y_pred)
-        # log.debug(f"\nConfusion matrix:\n\n{cnf_matrix}\n")
-        #
-        # log.info(f"Accuracy: {accuracy_score(y_test, y_pred)}")
-        # log.info(f"Precision: {precision_score(y_test, y_pred, average='macro')}")
-        # log.info(f"Recall: {recall_score(y_test, y_pred, average='macro')}")
-        # log.info(f"F1 score: {f1_score(y_test, y_pred, average='macro')}")
-        #
-        # if feature_names:
-        #     log.debug("Feature importances:")
-        #     for idx, name in enumerate(feature_names):
-        #         log.debug(
-        #             f"{name : <40} "
-        #             f"{self.model_instance.feature_importances_[idx]:6.4f}"
-        #         )
-
         log = PipelineLogger.get_logger()
-        for model in self.correct_classifications_per_model.keys():
-            acc = self.correct_classifications_per_model[model] / (
-                self.correct_classifications_per_model[model]
-                + self.false_classifications_per_model[model]
-            )
-            log.info(
-                f"\n---\nAccuracy report\n"
-                f"Model: {model}\n"
-                f"Correct: {self.correct_classifications_per_model[model]}\n"
-                f"False: {self.false_classifications_per_model[model]}\n"
-                f"Accuracy: {acc}\n---"
-            )
+        labels = sorted(set(self.ground_truths + self.predicted_labels))
+
+        cnf_matrix = confusion_matrix(self.ground_truths, self.predicted_labels, labels=labels)
+        log.info(f"\n---\nReport\n"
+                 f"\nConfusion matrix:\n\n{cnf_matrix}\n\n"
+                 f"Labels: {labels}\n"
+                 f"(i-th row, j-th column: samples with true label i and predicted label j)\n\n"
+                 f"Accuracy:"
+                 f"{accuracy_score(self.ground_truths, self.predicted_labels)}\n"
+                 f"Precision:"
+                 f"{precision_score(self.ground_truths, self.predicted_labels, average='macro')}\n"
+                 f"Recall:"
+                 f"{recall_score(self.ground_truths, self.predicted_labels, average='macro')}\n"
+                 f"F1 score: "
+                 f"{f1_score(self.ground_truths, self.predicted_labels, average='macro')}\n---"
+                 )
 
     @staticmethod
     def input_signature() -> List[IFeature]:
