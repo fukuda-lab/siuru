@@ -1,0 +1,64 @@
+{
+    "DESCRIPTION": [
+        ""
+    ],
+    "DATA_SOURCES": [
+        {
+            "loader": {
+                "class": "PcapFileLoader",
+                "kwargs": {
+                    "filepath": "{{ project_root }}/data/MQTTset-reduced/benign/benign-train.pcap",
+                    "packet_processor_path": "{{ project_root }}/code/cpp-extract-features/cmake-build/pcap-feature-extraction"
+                }
+            },
+            "preprocessors": [
+                {
+                    "class": "CppPacketProcessor",
+                    "kwargs": {}
+                },
+                {
+                    "class": "HostFeatureProcessor",
+                    "kwargs": {}
+                }
+            ]
+        }
+    ],
+    "MODEL":
+    {
+        "class": "MLPAutoEncoderModel",
+        "train_new_model": true,
+        "skip_saving_model": false,
+        "model_name": "host-single-ae",
+        "model_storage_base_path": "{{ project_root }}/models",
+        "encoder":
+        {
+            "class": "DefaultEncoder",
+            "kwargs": {
+                "feature_filter": [
+                    "host_rcv_pkt_count",
+                    "host_sum_rcv_pkt_size",
+                    "host_avg_rcv_pkt_size",
+                    "host_sent_pkt_count",
+                    "host_sum_sent_pkt_size",
+                    "host_avg_sent_pkt_size",
+                    "host_inter_arrival_last",
+                    "host_inter_arrival_avg",
+                    "host_conn_timedelta"
+                ]
+            }
+        }
+    },
+    "OUTPUT": [
+        {
+            "class": "DistanceReporter",
+            "kwargs": {}
+        }
+    ],
+    "LOG": [
+        {
+            "level": "DEBUG",
+            "path": "{{ project_root }}/logs/{{ config_file_name }}/{{ timestamp }}-training-log.txt"
+        }
+    ],
+    "VERSION": "{{ git_tag }}"
+}

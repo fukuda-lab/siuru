@@ -30,6 +30,7 @@ def main(args_config_path, args_influx_token):
 
     # Load configuration file that specifies pipeline components.
     config_path = os.path.abspath(args_config_path)
+    config_file_name = os.path.basename(config_path).split('.')[0]
     assert os.path.exists(config_path), "Config file not found!"
     log.debug(f"Loading configuration from: {config_path}")
     with open(config_path) as config_file:
@@ -40,6 +41,7 @@ def main(args_config_path, args_influx_token):
             template.globals["project_root"] = project_root()
             template.globals["git_tag"] = git_tag()
             template.globals["influx_token"] = args_influx_token
+            template.globals["config_file_name"] = config_file_name
             configuration = json.loads(template.render())
         else:
             configuration = json.loads(config_path)

@@ -20,21 +20,23 @@ for p in $(ls $conf_path/train); do
     echo "-----------------------------------------------"
     ((++counter))
 
-    python3 code/IoT-AD.py -c "$conf_path/train/$p" || \
-    { echo "Error while running $conf_path/train/$p"; exit 1; }
+    python3 code/IoT-AD.py -c "$conf_path/train/$p" &
 done
+
+wait
 
 # Run all test examples sequentially.
 counter=1
 for p in $(ls $conf_path/test); do
     echo "-----------------------------------------------"
-    echo "$counter: running example configuration from $p"
+    echo "$counter: running example configuration from $p" &
     echo "-----------------------------------------------"
     ((++counter))
 
-    python3 code/IoT-AD.py -c "$conf_path/test/$p" || \
-    { echo "Error while running $conf_path/test/$p"; exit 1; }
+    python3 code/IoT-AD.py -c "$conf_path/test/$p"
 done
+
+wait
 
 echo "---------"
 echo "Finished!"

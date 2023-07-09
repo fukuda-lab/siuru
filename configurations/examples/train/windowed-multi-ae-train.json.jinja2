@@ -1,0 +1,61 @@
+{
+    "DESCRIPTION": [
+        ""
+    ],
+    "DATA_SOURCES": [
+        {
+            "loader": {
+                "class": "PcapFileLoader",
+                "kwargs": {
+                    "filepath": "{{ project_root }}/data/MQTTset-reduced/benign/benign-train.pcap",
+                    "packet_processor_path": "{{ project_root }}/code/cpp-extract-features/cmake-build/pcap-feature-extraction"
+                }
+            },
+            "preprocessors": [
+                {
+                    "class": "CppPacketProcessor",
+                    "kwargs": {}
+                },
+                {
+                    "class": "WindowFlowFeatureProcessor",
+                    "kwargs": {
+                        "window_size_ms": 100
+                    }
+                }
+            ]
+        }
+    ],
+    "MODEL":
+    {
+        "class": "MLPAutoEncoderModel",
+        "train_new_model": true,
+        "skip_saving_model": false,
+        "model_name": "windowed-single-ae",
+        "model_storage_base_path": "{{ project_root }}/models",
+        "encoder":
+        {
+            "class": "MultiSampleEncoder",
+            "kwargs": {
+                "feature_filter": [
+                    "window_flow_pkt_count",
+                    "window_flow_sum_pkt_size",
+                    "window_flow_avg_pkt_size",
+                    "window_flow_inter_arrival_avg"
+                ]
+            }
+        }
+    },
+    "OUTPUT": [
+        {
+            "class": "DistanceReporter",
+            "kwargs": {}
+        }
+    ],
+    "LOG": [
+        {
+            "level": "DEBUG",
+            "path": "{{ project_root }}/logs/{{ config_file_name }}/{{ timestamp }}-training-log.txt"
+        }
+    ],
+    "VERSION": "{{ git_tag }}"
+}

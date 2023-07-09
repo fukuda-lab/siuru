@@ -40,7 +40,10 @@ class MLPAutoEncoderModel(IAnomalyDetectionModel):
         **kwargs,
     ):
         log.info("Training an MLP autoencoder.")
+
+        single_array_processing = False
         concatenated_data_array = None
+        encoded_features = []
 
         for features, encoding in data:
             if isinstance(features, list):
@@ -55,8 +58,8 @@ class MLPAutoEncoderModel(IAnomalyDetectionModel):
                         axis=0,
                     )
             else:
-                # TODO handle individually passed samples.
-                pass
+                single_array_processing = True
+                encoded_features.append(encoding[0])
 
         # TODO make model parameters configurable.
         self.model_instance = MLPRegressor(
@@ -74,7 +77,11 @@ class MLPAutoEncoderModel(IAnomalyDetectionModel):
             max_iter=10000,
         )
 
-        self.model_instance.fit(concatenated_data_array, concatenated_data_array)
+        if not single_array_processing:
+            self.model_instance.fit(concatenated_data_array, concatenated_data_array)
+        else:
+            self.model_instance.fit(encoded_features, encoded_features)
+
         if not self.skip_saving_model:
             dump(self.model_instance, self.store_file)
 
@@ -100,5 +107,5 @@ class MLPAutoEncoderModel(IAnomalyDetectionModel):
 
         else:
             features[PredictionField.MODEL_NAME] = self.model_name
-            features[PredictionField.OUTPUT_DISTANCE] = prediction[0]
+            features[PredictionField.OUTPUT_DISTANCE] = sum(prediction[0])
             yield features

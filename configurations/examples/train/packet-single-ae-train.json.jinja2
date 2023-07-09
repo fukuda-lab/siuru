@@ -1,14 +1,13 @@
 {
     "DESCRIPTION": [
-        "Train an autoencoder using a segment from MQTTset's benign traffic. ",
-        "Uses window-based flow features at 10 ms windows."
+        ""
     ],
     "DATA_SOURCES": [
         {
             "loader": {
                 "class": "PcapFileLoader",
                 "kwargs": {
-                    "filepath": "{{ project_root }}/data/MQTTset/Data/PCAP/capture_custom_1h.pcap",
+                    "filepath": "{{ project_root }}/data/MQTTset-reduced/benign/benign-train.pcap",
                     "packet_processor_path": "{{ project_root }}/code/cpp-extract-features/cmake-build/pcap-feature-extraction"
                 }
             },
@@ -16,12 +15,6 @@
                 {
                     "class": "CppPacketProcessor",
                     "kwargs": {}
-                },
-                {
-                    "class": "WindowFlowFeatureProcessor",
-                    "kwargs": {
-                        "window_size_ms": 10
-                    }
                 }
             ]
         }
@@ -31,17 +24,25 @@
         "class": "MLPAutoEncoderModel",
         "train_new_model": true,
         "skip_saving_model": false,
-        "model_name": "example-flow-based-multi-encoded-ae-benign",
+        "model_name": "packet-single-ae",
         "model_storage_base_path": "{{ project_root }}/models",
         "encoder":
         {
-            "class": "MultiSampleEncoder",
+            "class": "DefaultEncoder",
             "kwargs": {
                 "feature_filter": [
-                    "window_flow_pkt_count",
-                    "window_flow_sum_pkt_size",
-                    "window_flow_avg_pkt_size",
-                    "window_flow_inter_arrival_avg"
+                    "ip_header_size",
+                    "ip_size",
+                    "tcp_header_size",
+                    "tcp_size",
+                    "tcp_cwr",
+                    "tcp_ece",
+                    "tcp_urg",
+                    "tcp_ack",
+                    "tcp_psh",
+                    "tcp_rst",
+                    "tcp_syn",
+                    "tcp_fin"
                 ]
             }
         }
@@ -55,7 +56,7 @@
     "LOG": [
         {
             "level": "DEBUG",
-            "path": "{{ project_root }}/logs/example-flow-based-multi-encoded-ae-benign/{{ timestamp }}-training-log.txt"
+            "path": "{{ project_root }}/logs/{{ config_file_name }}/{{ timestamp }}-training-log.txt"
         }
     ],
     "VERSION": "{{ git_tag }}"

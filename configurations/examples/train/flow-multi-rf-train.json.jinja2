@@ -1,0 +1,191 @@
+{
+    "DESCRIPTION": [
+        ""
+    ],
+    "DATA_SOURCES": [
+        {
+            "loader": {
+                "class": "PcapFileLoader",
+                "kwargs": {
+                    "filepath": "{{ project_root }}/data/MQTTset-reduced/benign/benign-train.pcap",
+                    "packet_processor_path": "{{ project_root }}/code/cpp-extract-features/cmake-build/pcap-feature-extraction"
+                }
+            },
+            "preprocessors": [
+                {
+                    "class": "CppPacketProcessor",
+                    "kwargs": {}
+                },
+                {
+                    "class": "FlowFeatureProcessor",
+                    "kwargs": {}
+                },
+                {
+                    "class": "FileLabelProcessor",
+                    "kwargs": {
+                        "label_value": 0
+                    }
+                }
+            ]
+        },
+        {
+            "loader": {
+                "class": "PcapFileLoader",
+                "kwargs": {
+                    "filepath": "{{ project_root }}/data/MQTTset-reduced/bruteforce/bruteforce-train.pcapng",
+                    "packet_processor_path": "{{ project_root }}/code/cpp-extract-features/cmake-build/pcap-feature-extraction"
+                }
+            },
+            "preprocessors": [
+                {
+                    "class": "CppPacketProcessor",
+                    "kwargs": {}
+                },
+                {
+                    "class": "FlowFeatureProcessor",
+                    "kwargs": {}
+                },
+                {
+                    "class": "FileLabelProcessor",
+                    "kwargs": {
+                        "label_value": 1
+                    }
+                }
+            ]
+        },
+        {
+            "loader": {
+                "class": "PcapFileLoader",
+                "kwargs": {
+                    "filepath": "{{ project_root }}/data/MQTTset-reduced/flood/flood-train.pcap",
+                    "packet_processor_path": "{{ project_root }}/code/cpp-extract-features/cmake-build/pcap-feature-extraction"
+                }
+            },
+            "preprocessors": [
+                {
+                    "class": "CppPacketProcessor",
+                    "kwargs": {}
+                },
+                {
+                    "class": "FlowFeatureProcessor",
+                    "kwargs": {}
+                },
+                {
+                    "class": "FileLabelProcessor",
+                    "kwargs": {
+                        "label_value": 1
+                    }
+                }
+            ]
+        },
+        {
+            "loader": {
+                "class": "PcapFileLoader",
+                "kwargs": {
+                    "filepath": "{{ project_root }}/data/MQTTset-reduced/malariados/malariados-train.pcap",
+                    "packet_processor_path": "{{ project_root }}/code/cpp-extract-features/cmake-build/pcap-feature-extraction"
+                }
+            },
+            "preprocessors": [
+                {
+                    "class": "CppPacketProcessor",
+                    "kwargs": {}
+                },
+                {
+                    "class": "FlowFeatureProcessor",
+                    "kwargs": {}
+                },
+                {
+                    "class": "FileLabelProcessor",
+                    "kwargs": {
+                        "label_value": 1
+                    }
+                }
+            ]
+        },
+        {
+            "loader": {
+                "class": "PcapFileLoader",
+                "kwargs": {
+                    "filepath": "{{ project_root }}/data/MQTTset-reduced/malformed/malformed-train.pcap",
+                    "packet_processor_path": "{{ project_root }}/code/cpp-extract-features/cmake-build/pcap-feature-extraction"
+                }
+            },
+            "preprocessors": [
+                {
+                    "class": "CppPacketProcessor",
+                    "kwargs": {}
+                },
+                {
+                    "class": "FlowFeatureProcessor",
+                    "kwargs": {}
+                },
+                {
+                    "class": "FileLabelProcessor",
+                    "kwargs": {
+                        "label_value": 1
+                    }
+                }
+            ]
+        },
+        {
+            "loader": {
+                "class": "PcapFileLoader",
+                "kwargs": {
+                    "filepath": "{{ project_root }}/data/MQTTset-reduced/slowite/slowite-train.pcap",
+                    "packet_processor_path": "{{ project_root }}/code/cpp-extract-features/cmake-build/pcap-feature-extraction"
+                }
+            },
+            "preprocessors": [
+                {
+                    "class": "CppPacketProcessor",
+                    "kwargs": {}
+                },
+                {
+                    "class": "FlowFeatureProcessor",
+                    "kwargs": {}
+                },
+                {
+                    "class": "FileLabelProcessor",
+                    "kwargs": {
+                        "label_value": 1
+                    }
+                }
+            ]
+        }
+    ],
+    "MODEL":
+    {
+        "class": "RandomForestModel",
+        "train_new_model": true,
+        "skip_saving_model": false,
+        "model_name": "flow-multi-rf",
+        "model_storage_base_path": "{{ project_root }}/models",
+        "encoder":
+        {
+            "class": "MultiSampleEncoder",
+            "kwargs": {
+                "feature_filter": [
+                    "flow_pkt_count",
+                    "flow_sum_pkt_size",
+                    "flow_avg_pkt_size",
+                    "flow_inter_arrival_avg",
+                    "flow_inter_arrival_last"
+                ]
+            }
+        }
+    },
+    "OUTPUT": [
+        {
+            "class": "AccuracyReporter",
+            "kwargs": {}
+        }
+    ],
+    "LOG": [
+        {
+            "level": "DEBUG",
+            "path": "{{ project_root }}/logs/{{ config_file_name }}/{{ timestamp }}-training-log.txt"
+        }
+    ],
+    "VERSION": "{{ git_tag }}"
+}
