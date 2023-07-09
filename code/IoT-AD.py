@@ -7,6 +7,7 @@ from typing import List
 
 from jinja2 import Template
 
+import common.global_variables as global_variables
 from common.functions import report_performance, time_now, project_root, git_tag
 from dataloaders import *
 from models import *
@@ -140,9 +141,10 @@ def main(args_config_path, args_influx_token):
         model_instance.train(
             encoded_feature_generator, path_to_store=model_instance.store_file
         )
+
         end = time.process_time_ns()
-        sample_count = 0  # Not supported during training yet.
-        report_performance("Training", log, sample_count, end - start)
+        report_performance("Training", log, global_variables.global_pipeline_packet_count,
+                           end - start)
 
     else:
         # Prediction time!
@@ -154,20 +156,14 @@ def main(args_config_path, args_influx_token):
             reporter_instance = reporter_class(**output["kwargs"])
             reporter_instances.append(reporter_instance)
 
-        sample_count = 0
-        start = time.process_time_ns()
-
         for sample, encoding in encoded_feature_generator:
             for predicted_sample in model_instance.predict(sample, encoding):
                 for reporter_instance in reporter_instances:
                     reporter_instance.report(predicted_sample)
-                sample_count += 1
-            if sample_count % 1000 == 0:
-                log.debug(f"    Processed samples so far: {sample_count}")
-        end = time.process_time_ns()
-        report_performance("Predict + report", log, sample_count, end - start)
 
-        # Reporters may require special shutdown steps, for example disconnecting from remote database or printing summaries of the processing -- call the handle for each reporter.
+        # Reporters may require special shutdown steps, for example disconnecting from
+        # remote database or printing summaries of the processing -- call the handle for
+        # each reporter.
         for reporter_instance in reporter_instances:
             reporter_instance.end_processing()
 
@@ -176,20 +172,20 @@ def main(args_config_path, args_influx_token):
     report_performance(
         "IoT-AD full pipeline",
         log,
-        sample_count,
-        time.process_time_ns() - pipeline_execution_start,
+        global_variables.global_pipeline_packet_count,
+        pipeline_stopping_time - pipeline_execution_start,
     )
     report_performance(
         "IoT-AD from initialization",
         log,
-        sample_count,
-        time.process_time_ns() - class_initialization_start,
+        global_variables.global_pipeline_packet_count,
+        pipeline_stopping_time - class_initialization_start,
     )
     report_performance(
         "IoT-AD from encoding",
         log,
-        sample_count,
-        time.process_time_ns() - encoding_start,
+        global_variables.global_pipeline_packet_count,
+        pipeline_stopping_time - encoding_start,
     )
 
 

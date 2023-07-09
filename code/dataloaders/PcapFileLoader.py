@@ -2,6 +2,7 @@ import subprocess
 import time
 from typing import List, Generator, Dict, Any
 
+import common.global_variables as global_variables
 from common.functions import report_performance
 from dataloaders.IDataLoader import IDataLoader
 from common.features import IFeature, PacketFeature
@@ -9,6 +10,7 @@ from common.features import IFeature, PacketFeature
 from common.pipeline_logger import PipelineLogger
 
 log = PipelineLogger.get_logger()
+global_pipeline_packet_count = 0
 
 
 class PcapFileLoader(IDataLoader):
@@ -46,6 +48,11 @@ class PcapFileLoader(IDataLoader):
                 break
 
         report_performance(type(self).__name__, log, packet_count, sum_processing_time)
+
+        # Data loaders only exists once per data source, therefore they are
+        # suitable for tracking the overall number of packets processed. This
+        # value will be reported by the main pipeline in the end.
+        global_variables.global_pipeline_packet_count += packet_count
 
     @staticmethod
     def feature_signature() -> List[IFeature]:

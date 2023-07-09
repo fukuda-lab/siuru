@@ -2,7 +2,6 @@ import time
 
 from typing import Any, Dict, Generator, Tuple, Optional, List
 
-import numpy
 import numpy as np
 import xarray
 
