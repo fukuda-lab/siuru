@@ -7,7 +7,7 @@
             "loader": {
                 "class": "PcapFileLoader",
                 "kwargs": {
-                    "filepath": "{{ project_root }}/data/MQTTset-reduced/benign/benign-train.pcap",
+                    "filepath": "{{ project_root }}/data/MQTTset/Data/PCAP/capture_custom_1h.pcap",
                     "packet_processor_path": "{{ project_root }}/code/cpp-extract-features/cmake-build/pcap-feature-extraction"
                 }
             },
@@ -17,10 +17,8 @@
                     "kwargs": {}
                 },
                 {
-                    "class": "WindowFlowFeatureProcessor",
-                    "kwargs": {
-                        "window_size_ms": 100
-                    }
+                    "class": "FlowFeatureProcessor",
+                    "kwargs": {}
                 }
             ]
         }
@@ -30,17 +28,18 @@
         "class": "MLPAutoEncoderModel",
         "train_new_model": true,
         "skip_saving_model": false,
-        "model_name": "windowed-single-ae",
+        "model_name": "flow-single-ae",
         "model_storage_base_path": "{{ project_root }}/models",
         "encoder":
         {
-            "class": "MultiSampleEncoder",
+            "class": "DefaultEncoder",
             "kwargs": {
                 "feature_filter": [
-                    "window_flow_pkt_count",
-                    "window_flow_sum_pkt_size",
-                    "window_flow_avg_pkt_size",
-                    "window_flow_inter_arrival_avg"
+                    "flow_pkt_count",
+                    "flow_sum_pkt_size",
+                    "flow_avg_pkt_size",
+                    "flow_inter_arrival_avg",
+                    "flow_inter_arrival_last"
                 ]
             }
         }

@@ -156,13 +156,13 @@
     ],
     "MODEL":
     {
-        "class": "RandomForestModel",
+        "class": "MLPAutoEncoderModel",
         "train_new_model": false,
-        "model_name": "flow-single-rf",
+        "model_name": "flow-multi-ae",
         "model_storage_base_path": "{{ project_root }}/models",
         "encoder":
         {
-            "class": "DefaultEncoder",
+            "class": "MultiSampleEncoder",
             "kwargs": {
                 "feature_filter": [
                     "flow_pkt_count",
@@ -176,7 +176,7 @@
     },
     "OUTPUT": [
         {
-            "class": "AccuracyReporter",
+            "class": "DistanceReporter",
             "kwargs": {}
         }
     ],
