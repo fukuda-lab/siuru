@@ -1,0 +1,41 @@
+name: Set up SIURU and run sample configurations
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.8"]
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Initialize submodules
+        run: git submodule update --init --recursive
+      - name: Install Ubuntu dependencies
+        run: sudoapt install libpcap-dev
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r code/requirements.txt
+      - name: Build and install PcapPlusPlus
+        run: |
+          cd code/cpp-extract-features/PcapPlusPlus
+          cmake -S . -B cmake-build
+          cmake --build cmake-build --config Release
+          sudo cmake --install cmake-build
+      - name: Build feature extractor
+        run: |
+          cd code/cpp-extract-features
+          mkdir cmake-build && cd cmake-build
+          cmake ../..
+          cmake --build . --config Release
+          sudo setcap cap_net_raw+ep $(pwd)/pcap-feature-extraction
+      - name: Build and test sample configurations
+        run: ./.ci/run_sample_configurations.bash
