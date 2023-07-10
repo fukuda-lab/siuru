@@ -15,7 +15,7 @@ jobs:
       - name: Initialize submodules
         run: git submodule update --init --recursive
       - name: Install Ubuntu dependencies
-        run: sudoapt install libpcap-dev
+        run: sudo apt install libpcap-dev
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
