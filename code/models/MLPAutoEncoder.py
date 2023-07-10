@@ -5,7 +5,7 @@ import numpy as np
 from sklearn.neural_network import MLPRegressor
 from joblib import dump, load
 
-from common.features import IFeature, PredictionField
+from common.features import EncodedSampleGenerator, IFeature, PredictionField, SampleGenerator
 from models.IAnomalyDetectionModel import IAnomalyDetectionModel
 from common.pipeline_logger import PipelineLogger
 
@@ -90,22 +90,18 @@ class MLPAutoEncoderModel(IAnomalyDetectionModel):
         if not self.model_instance:
             log.error(f"Failed to load model from: {self.store_file}")
 
-    def predict(
-        self,
-        features: Union[Dict[IFeature, Any], List[Dict[IFeature, Any]]],
-        encoded_data: Any,
-        **kwargs,
-    ) -> Generator[Dict[IFeature, Any], None, None]:
-        prediction = self.model_instance.predict(encoded_data)
+    def predict(self, data: EncodedSampleGenerator, **kwargs) -> SampleGenerator:
+        for sample, encoded_sample in data:
+            prediction = self.model_instance.predict(encoded_sample)
 
-        if isinstance(features, list):
-            # Handle the prediction for multi-sample encoding.
-            for i, sample in enumerate(features):
+            if isinstance(sample, list):
+                # Handle the prediction for multi-sample encoding.
+                for i, sample in enumerate(sample):
+                    sample[PredictionField.MODEL_NAME] = self.model_name
+                    sample[PredictionField.OUTPUT_DISTANCE] = sum(abs(prediction[i]))
+                    yield sample
+
+            else:
                 sample[PredictionField.MODEL_NAME] = self.model_name
-                sample[PredictionField.OUTPUT_DISTANCE] = sum(abs(prediction[i]))
+                sample[PredictionField.OUTPUT_DISTANCE] = sum(prediction[0])
                 yield sample
-
-        else:
-            features[PredictionField.MODEL_NAME] = self.model_name
-            features[PredictionField.OUTPUT_DISTANCE] = sum(prediction[0])
-            yield features

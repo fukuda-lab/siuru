@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List
 
-from common.features import IFeature, FeatureGenerator
+from common.features import IFeature, SampleGenerator
 
 
 class IDataLoader(ABC):
@@ -22,7 +22,7 @@ class IDataLoader(ABC):
         pass
 
     @abstractmethod
-    def get_features(self) -> FeatureGenerator:
+    def get_samples(self) -> SampleGenerator:
         """
         Yields a dictionary of preprocessed features per sample.
         """

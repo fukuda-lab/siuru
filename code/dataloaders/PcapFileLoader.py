@@ -20,7 +20,7 @@ class PcapFileLoader(IDataLoader):
         self.preprocessor_path = packet_processor_path
         log.info(f"[{ type(self).__name__ }] Reading from file: {self.filepath}")
 
-    def get_features(
+    def get_samples(
         self,
     ) -> Generator[Dict[IFeature, Any], None, None]:
         pcap_call = [self.preprocessor_path, "stream-file", self.filepath]

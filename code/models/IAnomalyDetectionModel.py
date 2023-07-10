@@ -2,7 +2,7 @@ import os
 from abc import ABC, abstractmethod
 from typing import Optional
 
-from common.features import EncodedFeatureGenerator, FeatureGenerator
+from common.features import EncodedSampleGenerator, SampleGenerator
 
 
 class IAnomalyDetectionModel(ABC):
@@ -77,7 +77,7 @@ class IAnomalyDetectionModel(ABC):
             f.write(config)
 
     @abstractmethod
-    def train(self, data: EncodedFeatureGenerator, **kwargs):
+    def train(self, data: EncodedSampleGenerator, **kwargs):
         """
         Trains the anomaly detection model on provided data.
         If skip_saving_model == false, the model will be stored after training.
@@ -92,7 +92,7 @@ class IAnomalyDetectionModel(ABC):
         pass
 
     @abstractmethod
-    def predict(self, data: EncodedFeatureGenerator,**kwargs) -> FeatureGenerator:
+    def predict(self, data: EncodedSampleGenerator, **kwargs) -> SampleGenerator:
         """
         Adds a prediction entry based on encoded data directly into
         the feature dictionary of the provided sample, then return the sample.

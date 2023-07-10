@@ -12,7 +12,9 @@ class IReporter(ABC):
     @abstractmethod
     def report(self, features: Dict[IFeature, Any]):
         """
-        Performs reporting task based on the feature dictionary.
+        Performs the reporting task based on the sample's feature dictionary,
+        which should contain prediction information from an anomaly detection
+        component.
         """
         pass
 

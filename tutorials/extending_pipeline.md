@@ -102,13 +102,12 @@ To define the processing function, we iterate over the input feature generator a
 
 Although it might seem like an overkill for such a simple preprocessor, logging and profiling options should be added to every more complicated preprocessor to quickly debug or detect pipeline malfunctions. The full code could look as follows:
 
-
 ```python
 import csv
 import time
 from typing import List
 
-from common.features import FeatureGenerator, IFeature, PredictionField
+from common.features import SampleGenerator, IFeature, PredictionField
 from common.functions import report_performance
 from common.pipeline_logger import PipelineLogger
 from preprocessors import IPreprocessor
@@ -129,7 +128,7 @@ class KitsuneLabelProcessor(IPreprocessor):
     def __init__(self, label_file: str):
         self.csv_reader = csv.reader(label_file)
 
-    def process(self, features: FeatureGenerator) -> FeatureGenerator:
+    def process(self, features: SampleGenerator) -> SampleGenerator:
         sum_processing_time = 0
         packet_count = 0
 

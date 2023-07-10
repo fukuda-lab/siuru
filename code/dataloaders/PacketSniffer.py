@@ -9,7 +9,7 @@ class PacketSniffer(IDataLoader):
     def feature_signature() -> List[IFeature]:
         pass
 
-    def get_features(
+    def get_samples(
         self,
     ) -> Generator[Dict[IFeature, Any], None, None,]:
         pass

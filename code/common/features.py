@@ -99,12 +99,12 @@ def resolve_feature(feature_tag: str) -> IFeature:
     return None
 
 
-FeatureGenerator = NewType(
-    "FeatureGenerator", Generator[Dict[IFeature, Any], None, None]
+SampleGenerator = NewType(
+    "SampleGenerator", Generator[Dict[IFeature, Any], None, None]
 )
 
-EncodedFeatureGenerator = NewType(
-    "EncodedFeatureGenerator",
+EncodedSampleGenerator = NewType(
+    "EncodedSampleGenerator",
     Generator[Tuple[Dict[IFeature, Any], Any], None, None],
 )
 

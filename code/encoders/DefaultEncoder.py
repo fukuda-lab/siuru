@@ -6,7 +6,7 @@ import numpy as np
 
 from common.functions import report_performance
 from encoders.IDataEncoder import IDataEncoder
-from common.features import IFeature, FeatureGenerator, resolve_feature
+from common.features import IFeature, SampleGenerator, resolve_feature
 
 from common.pipeline_logger import PipelineLogger
 
@@ -35,7 +35,7 @@ class DefaultEncoder(IDataEncoder):
         log.info(f"Applied feature filter: {[f.value for f in self.feature_filter]}")
 
     def encode(
-        self, features: FeatureGenerator, **kwargs
+        self, samples: SampleGenerator, **kwargs
     ) -> Generator[Tuple[Dict[IFeature, Any], np.ndarray], None, None]:
         """
         :return: (1, n)-dimensional Numpy array, with n being the number of features in
@@ -44,7 +44,7 @@ class DefaultEncoder(IDataEncoder):
         sum_processing_time = 0
         packet_count = 0
 
-        for sample in features:
+        for sample in samples:
             start_time_ref = time.process_time_ns()
 
             if not self.feature_filter:

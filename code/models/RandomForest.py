@@ -7,7 +7,7 @@ from joblib import dump, load
 
 from sklearn.ensemble import RandomForestClassifier
 
-from common.features import IFeature, PredictionField
+from common.features import EncodedSampleGenerator, IFeature, PredictionField, SampleGenerator
 from models.IAnomalyDetectionModel import IAnomalyDetectionModel
 
 log = logging.getLogger()
@@ -68,7 +68,7 @@ class RandomForestModel(IAnomalyDetectionModel):
     def load(self):
         self.model_instance = load(self.store_file)
 
-    def predict(self, features, encoded_data, **kwargs):
+    def predict(self, data: EncodedSampleGenerator, **kwargs) ->SampleGenerator:
         # Requirements for encoded data:
         #
         # X : {array-like, sparse matrix} of shape (n_samples, n_features)
@@ -77,14 +77,14 @@ class RandomForestModel(IAnomalyDetectionModel):
         #     converted into a sparse ``csr_matrix``.
         #
         # Source: https://github.com/scikit-learn/scikit-learn/blob/72a604975102b2d93082385d7a5a7033886cc825/sklearn/ensemble/_forest.py
-
-        prediction = self.model_instance.predict(encoded_data)
-        if isinstance(features, list):
-            for i, sample in enumerate(features):
+        for sample, encoded_sample in data:
+            prediction = self.model_instance.predict(encoded_sample)
+            if isinstance(sample, list):
+                for i, sample in enumerate(sample):
+                    sample[PredictionField.MODEL_NAME] = self.model_name
+                    sample[PredictionField.OUTPUT_BINARY] = prediction[i]
+                    yield sample
+            else:
                 sample[PredictionField.MODEL_NAME] = self.model_name
-                sample[PredictionField.OUTPUT_BINARY] = prediction[i]
+                sample[PredictionField.OUTPUT_BINARY] = prediction[0]
                 yield sample
-        else:
-            features[PredictionField.MODEL_NAME] = self.model_name
-            features[PredictionField.OUTPUT_BINARY] = prediction[0]
-            yield features

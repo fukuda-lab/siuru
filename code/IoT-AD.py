@@ -77,7 +77,7 @@ def main(args_config_path, args_influx_token):
         loader_class = globals()[loader_name]
         log.info(f"Adding {loader_class.__name__} to pipeline.")
         loader: IDataLoader = loader_class(**data_source["loader"]["kwargs"])
-        new_feature_stream = loader.get_features()
+        new_feature_stream = loader.get_samples()
 
         # Initialize preprocessors specific to the data sources. Allowing each data source to specify its own preprocessor means data from different storage formats and with different processing needs can be combined to train models or perform prediction.
         for preprocessor_specification in data_source["preprocessors"]:

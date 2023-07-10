@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from common.features import FeatureGenerator, EncodedFeatureGenerator
+from common.features import SampleGenerator, EncodedSampleGenerator
 
 
 class IDataEncoder(ABC):
@@ -12,7 +12,7 @@ class IDataEncoder(ABC):
         pass
 
     @abstractmethod
-    def encode(self, features: FeatureGenerator, **kwargs) -> EncodedFeatureGenerator:
+    def encode(self, samples: SampleGenerator, **kwargs) -> EncodedSampleGenerator:
         """
         For each feature, yields both the original feature and its encoded version.
         """

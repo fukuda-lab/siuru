@@ -7,7 +7,7 @@ import xarray
 
 from common.functions import report_performance
 from encoders.IDataEncoder import IDataEncoder
-from common.features import IFeature, FeatureGenerator, resolve_feature
+from common.features import IFeature, SampleGenerator, resolve_feature
 
 from common.pipeline_logger import PipelineLogger
 
@@ -45,13 +45,13 @@ class MultiSampleEncoder(IDataEncoder):
         self.created_array_count = 0
 
     def encode(
-        self, features: FeatureGenerator, **kwargs
+        self, samples: SampleGenerator, **kwargs
     ) -> Generator[Tuple[Dict[IFeature, Any], np.ndarray], None, None]:
         """
         Encode input features into xarray.DataArrays. Features in feature_filter become
         the first dimension and samples the second dimension of the DataArray.
 
-        :param features: Generator of feature dictionaries to be encoded.
+        :param samples: Generator of feature dictionaries to be encoded.
         :return: Yields tuples with:
             (1) list of input feature dictionaries used to generate the encoding,
             (2) xarray.DataArray of the encoded samples.
@@ -63,7 +63,7 @@ class MultiSampleEncoder(IDataEncoder):
         array_to_encode = []
         last_published_time = time.process_time_ns()
 
-        for sample in features:
+        for sample in samples:
             start_time = time.process_time_ns()
 
             # Feature dictionaries will be stored in a single list element.
