@@ -1,3 +1,6 @@
 [submodule "code/cpp-extract-features/PcapPlusPlus"]
 	path = code/cpp-extract-features/PcapPlusPlus
 	url = git@github.com:seladb/PcapPlusPlus.git
+[submodule "data/MQTTset-reduced"]
+	path = data/MQTTset-reduced
+	url = https://github.com/l-laura/MQTTset-reduced

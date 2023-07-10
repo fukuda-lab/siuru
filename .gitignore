@@ -2,6 +2,7 @@
 /code/cpp-extract-features/PcapPlusPlus/cmake-build/
 /data/
 !/data/README.md
+!/data/MQTTset-reduced/
 /influxdb/
 /logs/
 /models/
