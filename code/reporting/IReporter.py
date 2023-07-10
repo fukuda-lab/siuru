@@ -5,15 +5,30 @@ from common.features import IFeature
 
 
 class IReporter(ABC):
+    """
+    Generic interface for reporter classes to implement.
+    """
+
     @abstractmethod
     def report(self, features: Dict[IFeature, Any]):
+        """
+        Performs reporting task based on the feature dictionary.
+        """
         pass
 
     @abstractmethod
     def end_processing(self):
+        """
+        Callback triggered by the main pipeline at the end of
+        processing for eventual teardown tasks.
+        """
         pass
 
     @staticmethod
     @abstractmethod
     def input_signature() -> List[IFeature]:
+        """
+        Returns a list of features that the reporter requires
+        in each input sample for internal processing.
+        """
         pass

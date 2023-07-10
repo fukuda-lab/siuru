@@ -1,12 +1,15 @@
 import os
 from abc import ABC, abstractmethod
-from typing import Optional, Any, Generator, Tuple, Dict, Union, List
+from typing import Optional
 
-from common.features import IFeature, LabeledFeatureGenerator
-from dataloaders import IDataLoader
+from common.features import EncodedFeatureGenerator, FeatureGenerator
 
 
 class IAnomalyDetectionModel(ABC):
+    """
+    Generic interface for anomaly detection model classes to implement.
+    """
+
     def __init__(
         self,
         model_name: str,
@@ -74,22 +77,24 @@ class IAnomalyDetectionModel(ABC):
             f.write(config)
 
     @abstractmethod
-    def train(self, data: LabeledFeatureGenerator, **kwargs):
+    def train(self, data: EncodedFeatureGenerator, **kwargs):
+        """
+        Trains the anomaly detection model on provided data.
+        If skip_saving_model == false, the model will be stored after training.
+        """
         pass
 
     @abstractmethod
     def load(self, **kwargs):
+        """
+        Load a previously stored model for prediction.
+        """
         pass
 
     @abstractmethod
-    def predict(
-        self,
-        features: Union[Dict[IFeature, Any], List[Dict[IFeature, Any]]],
-        encoded_data: Any,
-        **kwargs,
-    ) -> Generator[Dict[IFeature, Any], None, None]:
+    def predict(self, data: EncodedFeatureGenerator,**kwargs) -> FeatureGenerator:
         """
-        Add a prediction entry based on encoded_data directly into
-        the feature dictionary.
+        Adds a prediction entry based on encoded data directly into
+        the feature dictionary of the provided sample, then return the sample.
         """
         pass

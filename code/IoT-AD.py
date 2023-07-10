@@ -158,10 +158,9 @@ def main(args_config_path, args_influx_token):
             reporter_instance = reporter_class(**output["kwargs"])
             reporter_instances.append(reporter_instance)
 
-        for sample, encoding in encoded_feature_generator:
-            for predicted_sample in model_instance.predict(sample, encoding):
-                for reporter_instance in reporter_instances:
-                    reporter_instance.report(predicted_sample)
+        for predicted_sample in model_instance.predict(encoded_feature_generator):
+            for reporter_instance in reporter_instances:
+                reporter_instance.report(predicted_sample)
 
         # Reporters may require special shutdown steps, for example disconnecting from
         # remote database or printing summaries of the processing -- call the handle for

@@ -99,17 +99,13 @@ def resolve_feature(feature_tag: str) -> IFeature:
     return None
 
 
-# TODO can these be specified further? Otherwise, might just as well use 'Any'.
-DataType = NewType("DataType", Any)
-EncodedData = NewType("EncodedData", Any)
-
 FeatureGenerator = NewType(
-    "FeatureGenerator", Generator[Dict[IFeature, DataType], None, None]
+    "FeatureGenerator", Generator[Dict[IFeature, Any], None, None]
 )
 
-LabeledFeatureGenerator = NewType(
-    "LabeledFeatureGenerator",
-    Generator[Tuple[Dict[IFeature, DataType], EncodedData], None, None],
+EncodedFeatureGenerator = NewType(
+    "EncodedFeatureGenerator",
+    Generator[Tuple[Dict[IFeature, Any], Any], None, None],
 )
 
 FlowIdentifier = NewType("FlowIdentifier", Tuple[str, str, int, int, str])
