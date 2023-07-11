@@ -54,7 +54,7 @@ class MLPAutoEncoderModel(IAnomalyDetectionModel):
                 if self.filter_label:
                     # TODO filter xarray by GROUND_TRUTH filter.
                     pass
-                elif not concatenated_data_array:
+                elif concatenated_data_array is None:
                     concatenated_data_array = encoding
                 else:
                     concatenated_data_array = numpy.concatenate(

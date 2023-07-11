@@ -107,15 +107,16 @@ class MultiSampleEncoder(IDataEncoder):
                 sum_processing_time += time.process_time_ns() - start_time
 
         # When the samples run out, still publish the last array!
-        start_time = time.process_time_ns()
-        encoding_array = xarray.DataArray(
-            array_to_encode,
-            dims=["samples", "features"],
-            coords={"features": self.feature_filter},
-        )
-        self.created_array_count += 1
-        sum_processing_time += time.process_time_ns() - start_time
-        yield feature_dicts, encoding_array
+        if array_to_encode:
+            start_time = time.process_time_ns()
+            encoding_array = xarray.DataArray(
+                array_to_encode,
+                dims=["samples", "features"],
+                coords={"features": self.feature_filter},
+            )
+            self.created_array_count += 1
+            sum_processing_time += time.process_time_ns() - start_time
+            yield feature_dicts, encoding_array
 
         log.info(f"Created {self.created_array_count} multi-encoded arrays.")
         report_performance(type(self).__name__, log, packet_count, sum_processing_time)
