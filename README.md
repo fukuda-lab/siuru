@@ -95,10 +95,11 @@ In the interactive Docker session, run:
 
 ```bash
 python3 code/IoT-AD.py \
--c /configurations/tutorial/windowed-multi-rf-influxdb-train.json.jinja2
+-c /configurations/tutorial/
+-multi-rf-influxdb-train.json.jinja2
 ```
 
-The model will be stored under ``</project/root>/models/windowed-multi-rf-influxdb``.
+The model will be stored under ``</project/root>/models/window-multi-rf-influxdb``.
 
 ### Test the model
 
@@ -106,11 +107,11 @@ In an interactive session, run the following command, replacing the placeholder 
 
 ```bash
 python3 code/IoT-AD.py \
--c /configurations/tutorial/windowed-multi-rf-influxdb-test.json.jinja2 \
+-c /configurations/tutorial/window-multi-rf-influxdb-test.json.jinja2 \
 --influx-token <token>
 ```
 
-You should see prediction data being stored in InfluxDB tagged as: ``_measurement="windowed-multi-rf"``
+You should see prediction data being stored in InfluxDB tagged as: ``_measurement="window-multi-rf"``
 
 ## Setup without Docker
 
@@ -167,11 +168,11 @@ Refer to the command line hints of ``code/IoT-AD.py`` for information on the ava
 
 The example below assumes that we have built the C++ feature extractor using CMake under `<code/cpp-extract-features/cmake-build`.
 
-As a result of successful training, we will have a random forest classifier stored under `</project/root>/models/windowed-multi-rf-influxdb/windowed-multi-rf-influxdb.pickle`.
+As a result of successful training, we will have a random forest classifier stored under `</project/root>/models/window-multi-rf-influxdb/window-multi-rf-influxdb.pickle`.
 
 ```bash
 python code/IoT-AD.py \
--c configurations/tutorial/windowed-multi-rf-influxdb-train.json.jinja2
+-c configurations/tutorial/window-multi-rf-influxdb-train.json.jinja2
 ```
 
 ### Running anomaly detection
@@ -180,12 +181,12 @@ Refer to the commandline hint of ``code/IoT-AD.py`` for information on the avail
 
 The sample command below assumes that we have the following:
 1. built the C++ feature extractor using CMake under `<code/cpp-extract-features/cmake-build`,
-2. trained and stored the model under `</project/root>/models/windowed-multi-rf-influxdb/windowed-multi-rf-influxdb.pickle` (see previous section),
+2. trained and stored the model under `</project/root>/models/window-multi-rf-influxdb/window-multi-rf-influxdb.pickle` (see previous section),
 3. configured InfluxDB as seen below, including the generated token.
 
 ```bash
 python code/IoT-AD.py \
--c configurations/tutorial/windowed-multi-rf-influxdb-test.json.jinja \
+-c configurations/tutorial/window-multi-rf-influxdb-test.json.jinja \
 --influx-token <token>
 ```
 

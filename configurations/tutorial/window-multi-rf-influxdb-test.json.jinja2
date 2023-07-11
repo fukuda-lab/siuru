@@ -79,7 +79,7 @@
                 {
                     "class": "FileLabelProcessor",
                     "kwargs": {
-                        "label_value": 1
+                        "label_value": 2
                     }
                 }
             ]
@@ -106,7 +106,7 @@
                 {
                     "class": "FileLabelProcessor",
                     "kwargs": {
-                        "label_value": 1
+                        "label_value": 3
                     }
                 }
             ]
@@ -133,7 +133,7 @@
                 {
                     "class": "FileLabelProcessor",
                     "kwargs": {
-                        "label_value": 1
+                        "label_value": 4
                     }
                 }
             ]
@@ -160,7 +160,7 @@
                 {
                     "class": "FileLabelProcessor",
                     "kwargs": {
-                        "label_value": 1
+                        "label_value": 5
                     }
                 }
             ]
@@ -170,7 +170,7 @@
     {
         "class": "RandomForestModel",
         "train_new_model": false,
-        "model_name": "windowed-multi-rf",
+        "model_name": "window-multi-rf-influxdb",
         "model_storage_base_path": "{{ project_root }}/models",
         "encoder":
         {
@@ -189,8 +189,14 @@
     },
     "OUTPUT": [
         {
-            "class": "AccuracyReporter",
-            "kwargs": {}
+            "class": "InfluxDBReporter",
+            "kwargs": {
+                "measurement_name": "window-multi-rf",
+                "influx_url": "http://localhost:8086",
+                "influx_org": "default",
+                "influx_bucket": "default",
+                "influx_token": "{{ influx_token }}"
+            }
         }
     ],
     "LOG": [

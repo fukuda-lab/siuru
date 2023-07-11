@@ -170,11 +170,11 @@
     {
         "class": "RandomForestModel",
         "train_new_model": false,
-        "model_name": "windowed-multi-rf-influxdb",
+        "model_name": "window-single-rf",
         "model_storage_base_path": "{{ project_root }}/models",
         "encoder":
         {
-            "class": "MultiSampleEncoder",
+            "class": "DefaultEncoder",
             "kwargs": {
                 "feature_filter": [
                     "window_flow_pkt_count",
@@ -189,14 +189,8 @@
     },
     "OUTPUT": [
         {
-            "class": "InfluxDBReporter",
-            "kwargs": {
-                "measurement_name": "windowed-multi-rf",
-                "influx_url": "http://localhost:8086",
-                "influx_org": "default",
-                "influx_bucket": "default",
-                "influx_token": "{{ influx_token }}"
-            }
+            "class": "AccuracyReporter",
+            "kwargs": {}
         }
     ],
     "LOG": [
