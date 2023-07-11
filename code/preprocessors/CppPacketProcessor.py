@@ -59,7 +59,7 @@ class CppPacketProcessor(IPreprocessor):
         for s in samples:
             start_time_ref = time.process_time_ns()
             parts = s[PacketFeature.CPP_FEATURE_STRING].rstrip().split(",")
-            if len(parts) != len(self.output_signature()):
+            if len(parts) != len(self.output_signature()) - 1:  # Deduct for TCP_DATA_SIZE.
                 invalid_packet_count += 1
                 continue
 
