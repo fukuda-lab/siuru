@@ -1,4 +1,5 @@
 import enum
+import itertools
 from typing import NewType, Union, Dict, Any, Generator, Tuple
 
 
@@ -13,7 +14,8 @@ class PacketFeature(str, enum.Enum):
     IP_SOURCE_PORT = "ip_src_port"
     IP_DESTINATION_PORT = "ip_dst_port"
     PROTOCOL = "proto"
-    IP_PACKET_SIZE = "ip_size"
+    IP_HEADER_SIZE = "ip_header_size"
+    IP_DATA_SIZE = "ip_data_size"
     TCP_CWR_FLAG = "tcp_cwr"
     TCP_ECE_FLAG = "tcp_ece"
     TCP_URG_FLAG = "tcp_urg"
@@ -22,7 +24,8 @@ class PacketFeature(str, enum.Enum):
     TCP_RST_FLAG = "tcp_rst"
     TCP_SYN_FLAG = "tcp_syn"
     TCP_FIN_FLAG = "tcp_fin"
-    TCP_SEGMENT_SIZE = "tcp_size"
+    TCP_HEADER_SIZE = "tcp_header_size"
+    TCP_DATA_SIZE = "tcp_size"
     CPP_FEATURE_STRING = "cpp_feature_string"
     SOURCE_FILE_NAME = "source_file_name"
 
@@ -86,16 +89,23 @@ IFeature = NewType(
     "IFeature", Union[PacketFeature, HostFeature, FlowFeature, PredictionField]
 )
 
-# TODO can these be specified further? Otherwise, might just as well use 'Any'.
-DataType = NewType("DataType", Any)
-EncodedData = NewType("EncodedData", Any)
 
-FeatureGenerator = NewType(
-    "FeatureGenerator", Generator[Dict[IFeature, DataType], None, None]
+def resolve_feature(feature_tag: str) -> IFeature:
+    feature_enums = [PacketFeature, HostFeature, FlowFeature, PredictionField]
+    f: IFeature
+    for f in itertools.chain(*feature_enums):
+        if feature_tag == f.value:
+            return f
+    return None
+
+
+SampleGenerator = NewType(
+    "SampleGenerator", Generator[Dict[IFeature, Any], None, None]
 )
 
-LabeledFeatureGenerator = NewType(
-    "LabeledFeatureGenerator", Generator[Tuple[Dict[IFeature, DataType], EncodedData], None, None]
+EncodedSampleGenerator = NewType(
+    "EncodedSampleGenerator",
+    Generator[Tuple[Dict[IFeature, Any], Any], None, None],
 )
 
 FlowIdentifier = NewType("FlowIdentifier", Tuple[str, str, int, int, str])

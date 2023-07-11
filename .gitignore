@@ -1,0 +1,8 @@
+/code/cpp-extract-features/cmake-build/
+/code/cpp-extract-features/PcapPlusPlus/cmake-build/
+/data/
+!/data/README.md
+!/data/MQTTset-reduced/
+/influxdb/
+/logs/
+/models/

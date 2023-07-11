@@ -2,12 +2,10 @@ import time
 from collections import defaultdict
 from typing import Dict
 
-from pandas import Timestamp
-
 from common.features import (
     PacketFeature as Packet,
     HostFeature as Host,
-    FeatureGenerator,
+    SampleGenerator,
 )
 from common.functions import report_performance
 from common.pipeline_logger import PipelineLogger
@@ -25,36 +23,36 @@ class HostFeatureProcessor(IPreprocessor):
         self.packet_size_sum_from_host: Dict[str, int] = defaultdict(lambda: 0)
         self.packet_size_sum_to_host: Dict[str, int] = defaultdict(lambda: 0)
 
-        self.first_timestamp_from_host: Dict[str, Timestamp] = {}
-        self.last_timestamp_from_host: Dict[str, Timestamp] = {}
+        self.first_timestamp_from_host: Dict[str, int] = {}
+        self.last_timestamp_from_host: Dict[str, int] = {}
 
         self.sum_inter_arrival_times_from_host: Dict[str, int] = defaultdict(lambda: 0)
 
-    def process(self, features: FeatureGenerator) -> FeatureGenerator:
+    def process(self, samples: SampleGenerator) -> SampleGenerator:
         sum_processing_time = 0
         packet_count = 0
 
-        for f in features:
+        for s in samples:
             start_time_ref = time.process_time_ns()
             self.overall_packet_counter += 1
 
-            src_ip = f[Packet.IP_SOURCE_ADDRESS]
-            dst_ip = f[Packet.IP_DESTINATION_ADDRESS]
+            src_ip = s[Packet.IP_SOURCE_ADDRESS]
+            dst_ip = s[Packet.IP_DESTINATION_ADDRESS]
 
             self.packet_count_from_host[src_ip] += 1
             self.packet_count_to_host[dst_ip] += 1
 
-            self.packet_size_sum_from_host[src_ip] += f[Packet.IP_PACKET_SIZE]
-            self.packet_size_sum_to_host[dst_ip] += f[Packet.IP_PACKET_SIZE]
+            self.packet_size_sum_from_host[src_ip] += s[Packet.IP_DATA_SIZE]
+            self.packet_size_sum_to_host[dst_ip] += s[Packet.IP_DATA_SIZE]
 
             if src_ip not in self.first_timestamp_from_host:
                 # TODO switch to NaN? Needs special handling in decision trees.
                 host_last_inter_arrival_time = 0
                 host_avg_inter_arrival_time = 0
-                self.first_timestamp_from_host[src_ip] = f[Packet.TIMESTAMP]
+                self.first_timestamp_from_host[src_ip] = s[Packet.TIMESTAMP]
             else:
                 host_last_inter_arrival_time = (
-                    f[Packet.TIMESTAMP] - self.last_timestamp_from_host[src_ip]
+                    s[Packet.TIMESTAMP] - self.last_timestamp_from_host[src_ip]
                 )
 
                 self.sum_inter_arrival_times_from_host[
@@ -65,36 +63,36 @@ class HostFeatureProcessor(IPreprocessor):
                     src_ip
                 ] / (self.packet_count_from_host[src_ip] - 1)
 
-            self.last_timestamp_from_host[src_ip] = f[Packet.TIMESTAMP]
+            self.last_timestamp_from_host[src_ip] = s[Packet.TIMESTAMP]
 
             host_connection_duration = (
                 self.last_timestamp_from_host[src_ip]
                 - self.first_timestamp_from_host[src_ip]
             )
 
-            f[Host.RECEIVED_PACKET_COUNT] = self.packet_count_from_host[src_ip]
-            f[Host.SUM_RECEIVED_PACKET_SIZE] = self.packet_size_sum_from_host[src_ip]
+            s[Host.RECEIVED_PACKET_COUNT] = self.packet_count_from_host[src_ip]
+            s[Host.SUM_RECEIVED_PACKET_SIZE] = self.packet_size_sum_from_host[src_ip]
 
-            f[Host.AVG_RECEIVED_PACKET_SIZE] = (
+            s[Host.AVG_RECEIVED_PACKET_SIZE] = (
                 self.packet_size_sum_from_host[src_ip]
                 / self.packet_count_from_host[src_ip]
             )
 
-            f[Host.SENT_PACKET_COUNT] = self.packet_count_to_host[dst_ip]
-            f[Host.SUM_SENT_PACKET_SIZE] = self.packet_size_sum_to_host[dst_ip]
-            f[Host.AVG_SENT_PACKET_SIZE] = (
+            s[Host.SENT_PACKET_COUNT] = self.packet_count_to_host[dst_ip]
+            s[Host.SUM_SENT_PACKET_SIZE] = self.packet_size_sum_to_host[dst_ip]
+            s[Host.AVG_SENT_PACKET_SIZE] = (
                 self.packet_size_sum_from_host[src_ip]
                 / self.packet_count_to_host[dst_ip]
             )
 
-            f[Host.LAST_INTER_ARRIVAL_TIME] = host_last_inter_arrival_time
-            f[Host.AVG_INTER_ARRIVAL_TIME] = host_avg_inter_arrival_time
-            f[Host.CONNECTION_DURATION] = host_connection_duration
+            s[Host.LAST_INTER_ARRIVAL_TIME] = host_last_inter_arrival_time
+            s[Host.AVG_INTER_ARRIVAL_TIME] = host_avg_inter_arrival_time
+            s[Host.CONNECTION_DURATION] = host_connection_duration
 
             sum_processing_time += time.process_time_ns() - start_time_ref
             packet_count += 1
 
-            yield f
+            yield s
 
         log = PipelineLogger.get_logger()
         report_performance(type(self).__name__, log, packet_count, sum_processing_time)
@@ -102,7 +100,7 @@ class HostFeatureProcessor(IPreprocessor):
     @staticmethod
     def input_signature():
         return [
-            Packet.IP_PACKET_SIZE,
+            Packet.IP_DATA_SIZE,
             Packet.TCP_CWR_FLAG,
             Packet.TCP_ECE_FLAG,
             Packet.TCP_URG_FLAG,

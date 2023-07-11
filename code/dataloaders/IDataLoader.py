@@ -1,13 +1,12 @@
-import os
 from abc import ABC, abstractmethod
-from typing import List, Union, Generator, Dict, Any
+from typing import List
 
-from common.features import IFeature, FeatureGenerator
+from common.features import IFeature, SampleGenerator
 
 
 class IDataLoader(ABC):
     """
-    Generic interface for data loading modules to implement.
+    Generic interface for data loading classes to implement.
     """
 
     def __init__(self, **kwargs):
@@ -16,11 +15,15 @@ class IDataLoader(ABC):
     @staticmethod
     @abstractmethod
     def feature_signature() -> List[IFeature]:
-        return []
+        """
+        Returns a list of features that the data loader promises
+        to deliver in each sample when the generator is called.
+        """
+        pass
 
     @abstractmethod
-    def get_features(self) -> FeatureGenerator:
+    def get_samples(self) -> SampleGenerator:
         """
         Yields a dictionary of preprocessed features per sample.
         """
-        yield {}
+        pass

@@ -1,20 +1,19 @@
 from abc import ABC, abstractmethod
-from typing import Generator, Dict, Any, Tuple
 
-from common.features import IFeature, FeatureGenerator, LabeledFeatureGenerator
+from common.features import SampleGenerator, EncodedSampleGenerator
 
 
 class IDataEncoder(ABC):
     """
-    Generic interface for data encoder modules to implement.
+    Generic interface for data encoder classes to implement.
     """
 
     def __init__(self, **kwargs):
         pass
 
     @abstractmethod
-    def encode(self, features: FeatureGenerator, **kwargs) -> LabeledFeatureGenerator:
+    def encode(self, samples: SampleGenerator, **kwargs) -> EncodedSampleGenerator:
         """
-        For each feature, return both the original feature and its encoded version.
+        For each feature, yields both the original feature and its encoded version.
         """
-        yield None
+        pass

@@ -3,8 +3,6 @@ FROM ubuntu:20.04
 ENV TZ=Europe/Berlin
 ENV DEBIAN_FRONTEND=noninteractive
 
-COPY ./ /code/
-
 RUN apt-get clean && \
     apt-get update && \
     apt-get -y upgrade && \
@@ -22,15 +20,26 @@ RUN apt-get clean && \
     python3-pip \
     bc
 
+# Copy only the needed files for each build step to avoid triggering
+# unnecessary layer rebuilds: https://stackoverflow.com/a/45929376
+COPY ./requirements.txt /code/requirements.txt
 RUN pip3 install -r code/requirements.txt
 
-# Using "build-docker" to not collide with the "build" dir.
+COPY ./cpp-extract-features /code/cpp-extract-features
 RUN cd /code/cpp-extract-features/PcapPlusPlus && \
     cmake -S . -B build-docker && \
     cmake --build build-docker && \
     cmake --install build-docker
 
-RUN mkdir cmake-build-debug && \
-    cd cmake-build-debug && \
-    cmake ../code && \
-    cmake --build .
+COPY ./CMakeLists.txt /code/CMakeLists.txt
+RUN cd /code/cpp-extract-features && \
+    mkdir cmake-build && \
+    cd cmake-build && \
+    cmake ../.. && \
+    cmake --build . --config Release && \
+    setcap cap_net_raw+ep $(pwd)/pcap-feature-extraction
+# TODO test if the setcap command is needed for live traffic capture in Docker.
+
+# Copy the codebase (which is the most likely part to change) as late
+# as possible to reduce the number of layers needing to be rebuilt.
+COPY ./ /code/

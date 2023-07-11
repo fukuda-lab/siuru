@@ -1,0 +1,68 @@
+{
+    "DESCRIPTION": [
+        "Train an autoencoder using a segment from kaiyodai-ship traffic. ",
+        "Uses window-based flow features at 10 ms windows."
+    ],
+    "DATA_SOURCES": [
+        {
+            "type": "dataset",
+            "loader": {
+                "class": "PcapFileLoader",
+                "kwargs": {
+                    "filepath": "{{ project_root }}/data/kaiyodai-ship-split/test.cap",
+                    "preprocessor_path": "{{ project_root }}/code/cpp-extract-features/cmake-build/pcap-feature-extraction"
+                }
+            },
+            "preprocessors": [
+                {
+                    "class": "CppPacketProcessor",
+                    "kwargs": {}
+                },
+                {
+                    "class": "WindowFlowFeatureProcessor",
+                    "kwargs": {
+                        "window_size_ms": 10
+                    }
+                }
+            ]
+        }
+    ],
+    "MODEL":
+    {
+        "class": "MLPAutoEncoderModel",
+        "train_new_model": false,
+        "model_name": "kaiyodai-multi-encoded-ae",
+        "model_storage_base_path": "{{ project_root }}/models",
+        "encoder":
+        {
+            "class": "MultiSampleEncoder",
+            "kwargs": {
+                "feature_filter": [
+                    "window_flow_pkt_count",
+                    "window_flow_sum_pkt_size",
+                    "window_flow_avg_pkt_size",
+                    "window_flow_inter_arrival_avg"
+                ]
+            }
+        }
+    },
+    "OUTPUT": [
+        {
+            "class": "InfluxDBReporter",
+            "kwargs": {
+                "measurement_name": "kaiyodai-ship",
+                "influx_url": "http://localhost:8086",
+                "influx_org": "default",
+                "influx_bucket": "default",
+                "influx_token": "{{ influx_token }}"
+            }
+        }
+    ],
+    "LOG": [
+        {
+            "level": "DEBUG",
+            "path": "{{ project_root }}/models/kaiyodai-multi-encoded-ae/{{ timestamp }}-test-log.txt"
+        }
+    ],
+    "VERSION": "{{ git_tag }}"
+}

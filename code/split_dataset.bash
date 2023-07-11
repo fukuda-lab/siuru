@@ -5,13 +5,17 @@ set -o pipefail
 
 valid_args=true
 
-if [[ "$1" != "head-tail" && "$1" != "round-robin" ]]; then
+if (( $# == 0 )); then
     valid_args=false
-fi
-if [[ "$1" == "head-tail" && $# != 5 ]]; then
-    valid_args=false
-elif [[ "$1" == "round-robin" && $# != 6 ]]; then
-    valid_args=false
+else
+    if [[ "$1" != "head-tail" && "$1" != "round-robin" ]]; then
+        valid_args=false
+    fi
+    if [[ "$1" == "head-tail" && $# != 5 ]]; then
+        valid_args=false
+    elif [[ "$1" == "round-robin" && $# != 6 ]]; then
+        valid_args=false
+    fi
 fi
 
 if [[ $valid_args != "true" ]]; then
@@ -23,15 +27,15 @@ if [[ $valid_args != "true" ]]; then
     echo ""
     echo "Usage: ./split_dataset.bash <head-tail|round-robin> <args ...>"
     echo "Args head-tail: <input-file> <output-dir> <%train> <%validation>"
-    echo "Args round-robin: <input-file> <output-dir> <#split> <#train> <#validation>"
+    echo "Args round-robin: <input-file> <output-dir> <#train> <#validation> <#test>"
     echo ""
     echo "head-tail: Writes the flows in input data to separate files (can be many!),"
     echo "then merges them into [train|validate|test].pcapng files in the output dir."
     echo "train.pcapng will contain the first <%train> percent of all created files,"
     echo "validation the next <%validation> percent, remaining ones will be in test."
     echo ""
-    echo "round-robin: Writes the packets to <#split> files, then merges them into"
-    echo "[train|validate|test].pcapng files in the output directory."
+    echo "round-robin: Writes the packets to <#train + #validation + #test> files,"
+    echo "then merges them into [train|validate|test].pcapng files in output directory."
     echo "train.pcapng will contain flows from the first <#train> files,"
     echo "validation the next <#validation> files, remaining ones will be in test."
     echo "The file for each flow is assigned circularly, hence the name round-robin."
@@ -43,6 +47,9 @@ mode=$1
 pcap_path=$2
 output_path=$3
 
+# Save output files with the same extension as input.
+extension="${pcap_path##*.}"
+
 mkdir $output_path
 tmp_dir=$output_path/pcapsplitter-tmp
 mkdir $tmp_dir
@@ -52,10 +59,10 @@ mkdir $tmp_dir
 # written to one output file, separate from the other output files (usually file#0).
 
 if [[ "$mode" == "round-robin" ]]; then
-    split_count=$4
-    train_set=$5
-    validation_set=$6
-    test_set=$((split_count - train_set - validation_set))
+    train_set=$4
+    validation_set=$5
+    test_set=$6
+    split_count=$((train_set + validation_set + test_set))
 
     PcapSplitter -f $pcap_path -o $tmp_dir -m connection -p $split_count
 else
@@ -101,8 +108,18 @@ else
     echo "Flows in test set: ${#test_files[@]}" >> "$readme_file"
 fi
 
-mergecap -w $output_path/train.pcapng ${train_files[@]}
-mergecap -w $output_path/validation.pcapng ${validation_files[@]}
-mergecap -w $output_path/test.pcapng ${test_files[@]}
+# Only call mergecap if there are files to be merged. Skip if e.g.
+# no validation set was requested.
+if (( ${#train_files[@]} )); then
+    mergecap -w $output_path/train.$extension ${train_files[@]}
+fi
+
+if (( ${#validation_files[@]} )); then
+    mergecap -w $output_path/validation.$extension ${validation_files[@]}
+fi
+
+if (( ${#test_files[@]} )); then
+    mergecap -w $output_path/test.$extension ${test_files[@]}
+fi
 
 rm -r $tmp_dir

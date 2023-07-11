@@ -27,7 +27,6 @@
         {
             "class": "MLPAutoEncoder",
             "train_new_model": false,
-            "skip_saving_model": true,
             "model_name": "packet-sniffer-based-rf",
             "model_storage_base_path": "{{ project_root }}/models",
             "encoder":
@@ -35,7 +34,7 @@
                 "class": "DefaultEncoder",
                 "kwargs": {
                     "feature_filter": [
-                        "ip_size",
+                        "ip_data_size",
                         "tcp_cwr",
                         "tcp_ece",
                         "tcp_urg",
