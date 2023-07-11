@@ -190,6 +190,18 @@ python code/IoT-AD.py \
 --influx-token <token>
 ```
 
+## Example pipelines
+
+Under `configurations/examples`, you can currently find 12 configurations demonstrating the possible combinations of components implemented in SIURU.
+
+The examples are automatically run as tests in the SIURU GitHub repository, but it is possible to run them locally after you have finished the setup (e.g. built the C++ feature extractor, installed Python dependencies):
+
+```bash
+./.ci/run_sample_configurations.bash
+```
+
+Extending the test cases is easy: add your training and testing configurations into the same directories and they will be found by the CI script. 
+
 ## Working with data
 
 Use the bash script under ``code/split_dataset.bash`` to split a PCAP file into training, validation, and test sets. The script works based on flows, so packets from the same connection end up in the same file after the split.
