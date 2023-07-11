@@ -42,8 +42,8 @@ class HostFeatureProcessor(IPreprocessor):
             self.packet_count_from_host[src_ip] += 1
             self.packet_count_to_host[dst_ip] += 1
 
-            self.packet_size_sum_from_host[src_ip] += s[Packet.IP_PACKET_SIZE]
-            self.packet_size_sum_to_host[dst_ip] += s[Packet.IP_PACKET_SIZE]
+            self.packet_size_sum_from_host[src_ip] += s[Packet.IP_DATA_SIZE]
+            self.packet_size_sum_to_host[dst_ip] += s[Packet.IP_DATA_SIZE]
 
             if src_ip not in self.first_timestamp_from_host:
                 # TODO switch to NaN? Needs special handling in decision trees.
@@ -100,7 +100,7 @@ class HostFeatureProcessor(IPreprocessor):
     @staticmethod
     def input_signature():
         return [
-            Packet.IP_PACKET_SIZE,
+            Packet.IP_DATA_SIZE,
             Packet.TCP_CWR_FLAG,
             Packet.TCP_ECE_FLAG,
             Packet.TCP_URG_FLAG,

@@ -10,7 +10,6 @@ from common.features import IFeature, PacketFeature
 from common.pipeline_logger import PipelineLogger
 
 log = PipelineLogger.get_logger()
-global_pipeline_packet_count = 0
 
 
 class PcapFileLoader(IDataLoader):
@@ -33,10 +32,10 @@ class PcapFileLoader(IDataLoader):
         )
 
         while True:
+            start_time_ref = time.process_time_ns()
             if process.poll() and process.returncode:
                 log.error(process.stdout.readlines())
                 raise RuntimeError(f"PCAP feature extractor exited with error code {process.returncode}!")
-            start_time_ref = time.process_time_ns()
             packet_features = {
                 PacketFeature.CPP_FEATURE_STRING: process.stdout.readline()
             }

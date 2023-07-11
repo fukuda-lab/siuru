@@ -70,7 +70,7 @@ class WindowFlowFeatureProcessor(IPreprocessor):
 
                 # Reset counters for this flow.
                 self.window_packet_count[flow_id] = 1
-                self.window_packet_size_sum[flow_id] = s[Packet.IP_PACKET_SIZE]
+                self.window_packet_size_sum[flow_id] = s[Packet.IP_DATA_SIZE]
                 self.window_sum_inter_arrival_times[flow_id] = timestamp - self.last_timestamp[flow_id]
                 self.last_timestamp[flow_id] = timestamp
                 self.first_timestamp_after_yield[flow_id] = timestamp
@@ -82,7 +82,7 @@ class WindowFlowFeatureProcessor(IPreprocessor):
             else:
                 # Process the packet, but yield nothing.
                 self.window_packet_count[flow_id] += 1
-                self.window_packet_size_sum[flow_id] += s[Packet.IP_PACKET_SIZE]
+                self.window_packet_size_sum[flow_id] += s[Packet.IP_DATA_SIZE]
                 if self.last_timestamp[flow_id] != 0:
                     self.window_sum_inter_arrival_times[flow_id] += timestamp - self.last_timestamp[flow_id]
                 self.last_timestamp[flow_id] = timestamp
@@ -96,7 +96,7 @@ class WindowFlowFeatureProcessor(IPreprocessor):
     @staticmethod
     def input_signature():
         return [
-            Packet.IP_PACKET_SIZE,
+            Packet.IP_DATA_SIZE,
             Packet.IP_SOURCE_ADDRESS,
             Packet.IP_DESTINATION_ADDRESS,
             Packet.IP_SOURCE_PORT,

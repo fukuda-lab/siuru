@@ -32,5 +32,5 @@ def report_performance(tag, logger, sample_count, passed_time_ns):
     if passed_time_ns:
         logger.info(f" > { passed_time_ns } ns")
     if sample_count and passed_time_ns:
-        logger.info(f" > { passed_time_ns / sample_count } ns/sample")
-        logger.info(f" > { sample_count / (passed_time_ns / 1000000000) } packets/s")
+        logger.info(f" > { round(passed_time_ns / sample_count) } ns/sample")
+        logger.info(f" > { round(sample_count / (passed_time_ns / 1000000000), 2) } packets/s")

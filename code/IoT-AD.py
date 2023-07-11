@@ -48,7 +48,6 @@ def main(args_config_path, args_influx_token):
     if not configuration:
         log.error("Could not load configuration file!")
         exit(1)
-    log.debug("Configuration loaded!")
 
     class_initialization_start = time.process_time_ns()
 
@@ -66,6 +65,9 @@ def main(args_config_path, args_influx_token):
             if not os.path.exists(os.path.dirname(log_path)):
                 os.makedirs(os.path.dirname(log_path))
             PipelineLogger.add_file_logger(log_level, log_path)
+
+    # Re-logging the path because file-based logger was not initialized before.
+    log.debug(f"Running configuration: {config_path}")
 
     # Feature stream is a Python generator object: https://wiki.python.org/moin/Generators
     # It allows to process the samples memory-efficiently, avoiding the need to store all data in memory at the same time.
@@ -139,14 +141,9 @@ def main(args_config_path, args_influx_token):
 
     if model_specification["train_new_model"]:
         # Train the model.
-        start = time.process_time_ns()
         model_instance.train(
             encoded_feature_generator, path_to_store=model_instance.store_file
         )
-
-        end = time.process_time_ns()
-        report_performance("Training", log, global_variables.global_pipeline_packet_count,
-                           end - start)
 
     else:
         # Prediction time!
@@ -169,25 +166,47 @@ def main(args_config_path, args_influx_token):
             reporter_instance.end_processing()
 
     pipeline_stopping_time = time.process_time_ns()
+    full_pipeline_time = pipeline_stopping_time - pipeline_execution_start
+    time_from_initialization = pipeline_stopping_time - class_initialization_start
+    time_from_processing = pipeline_stopping_time - encoding_start
 
     report_performance(
-        "IoT-AD full pipeline",
+        "FullPipeline",
         log,
         global_variables.global_pipeline_packet_count,
-        pipeline_stopping_time - pipeline_execution_start,
+        full_pipeline_time,
     )
     report_performance(
-        "IoT-AD from initialization",
+        "FromInitializationStart",
         log,
         global_variables.global_pipeline_packet_count,
-        pipeline_stopping_time - class_initialization_start,
+        time_from_initialization,
     )
     report_performance(
-        "IoT-AD from encoding",
+        "FromProcessingStart",
         log,
         global_variables.global_pipeline_packet_count,
-        pipeline_stopping_time - encoding_start,
+        time_from_processing,
     )
+
+    # See Table 1 at:
+    # https://sec.cloudapps.cisco.com/security/center/resources/network_performance_metrics.html
+    total_ethernet_bytes = global_variables.global_sum_ip_packet_sizes + global_variables.global_pipeline_packet_count * 38
+    total_pipeline_bandwidth = (total_ethernet_bytes * 8 / 1000000) / (full_pipeline_time / 1000000000)
+    from_init_bandwidth = (total_ethernet_bytes * 8 / 1000000) / (time_from_initialization / 1000000000)
+    from_processing_bandwidth = (total_ethernet_bytes * 8 / 1000000) / (time_from_processing / 1000000000)
+    log.info("---\nData volume and bandwidth:\n"
+             f"  {global_variables.global_pipeline_packet_count} IP packets\n"
+             f"  {global_variables.global_sum_ip_packet_sizes} bytes IP traffic\n"
+             f"  {total_ethernet_bytes} bytes Ethernet traffic\n"
+             f"  {round(total_pipeline_bandwidth, 2)} megabits/second "
+             f"Ethernet traffic bandwidth for full pipeline\n"
+             f"  {round(from_init_bandwidth, 2)} megabits/second "
+             f"Ethernet traffic bandwidth from initialization start\n"
+             f"  {round(from_processing_bandwidth, 2)} megabits/second "
+             f"Ethernet traffic bandwidth from processing start\n"
+    )
+
 
 
 if __name__ == "__main__":

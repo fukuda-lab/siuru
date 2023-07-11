@@ -2,6 +2,7 @@ import re
 import time
 from typing import List
 
+import common.global_variables as global_variables
 from common.features import IFeature, PacketFeature, SampleGenerator
 from common.functions import report_performance
 from preprocessors.IPreprocessor import IPreprocessor
@@ -37,7 +38,7 @@ class CppPacketProcessor(IPreprocessor):
             PacketFeature.PROTOCOL,
             PacketFeature.TIMESTAMP,
             PacketFeature.IP_HEADER_SIZE,
-            PacketFeature.IP_PACKET_SIZE,
+            PacketFeature.IP_DATA_SIZE,
             PacketFeature.TCP_CWR_FLAG,
             PacketFeature.TCP_ECE_FLAG,
             PacketFeature.TCP_URG_FLAG,
@@ -47,7 +48,7 @@ class CppPacketProcessor(IPreprocessor):
             PacketFeature.TCP_SYN_FLAG,
             PacketFeature.TCP_FIN_FLAG,
             PacketFeature.TCP_HEADER_SIZE,
-            PacketFeature.TCP_SEGMENT_SIZE,
+            PacketFeature.TCP_DATA_SIZE,
         ]
 
     def process(self, samples: SampleGenerator) -> SampleGenerator:
@@ -69,7 +70,7 @@ class CppPacketProcessor(IPreprocessor):
             s[PacketFeature.PROTOCOL] = parts[4]
             s[PacketFeature.TIMESTAMP] = int(parts[5])
             s[PacketFeature.IP_HEADER_SIZE] = int(parts[6])
-            s[PacketFeature.IP_PACKET_SIZE] = int(parts[7])
+            s[PacketFeature.IP_DATA_SIZE] = int(parts[7])
             s[PacketFeature.TCP_CWR_FLAG] = int(parts[8])
             s[PacketFeature.TCP_ECE_FLAG] = int(parts[9])
             s[PacketFeature.TCP_URG_FLAG] = int(parts[10])
@@ -79,10 +80,12 @@ class CppPacketProcessor(IPreprocessor):
             s[PacketFeature.TCP_SYN_FLAG] = int(parts[14])
             s[PacketFeature.TCP_FIN_FLAG] = int(parts[15])
             s[PacketFeature.TCP_HEADER_SIZE] = int(parts[16])
-            s[PacketFeature.TCP_SEGMENT_SIZE] = int(parts[17])
+            s[PacketFeature.TCP_DATA_SIZE] = s[PacketFeature.IP_DATA_SIZE] - s[PacketFeature.TCP_HEADER_SIZE]
 
             sum_processing_time += time.process_time_ns() - start_time_ref
             valid_packet_count += 1
+            global_variables.global_sum_ip_packet_sizes += s[PacketFeature.IP_HEADER_SIZE]
+            global_variables.global_sum_ip_packet_sizes += s[PacketFeature.IP_DATA_SIZE]
             yield s
 
         log = PipelineLogger.get_logger()
