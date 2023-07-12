@@ -6,6 +6,7 @@ jinja2
 numpy
 packaging
 xarray
+Cython
 
 # Scapy + optional dependencies
 --pre scapy[basic]
