@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod, abstractstaticmethod
 from typing import List
 
 from common.features import IFeature, SampleGenerator
@@ -9,8 +9,7 @@ class IPreprocessor(ABC):
     Generic interface for data preprocessor classes to implement.
     """
 
-    @staticmethod
-    @abstractmethod
+    @abstractstaticmethod
     def input_signature() -> List[IFeature]:
         """
         Returns a list of features that the preprocessor requires in each input sample
@@ -18,8 +17,7 @@ class IPreprocessor(ABC):
         """
         pass
 
-    @staticmethod
-    @abstractmethod
+    @abstractstaticmethod
     def output_signature() -> List[IFeature]:
         """
         Returns a list of features that the preprocessor promises to deliver

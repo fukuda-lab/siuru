@@ -37,5 +37,7 @@ jobs:
           cmake ../..
           cmake --build . --config Release
           sudo setcap cap_net_raw+ep $(pwd)/pcap-feature-extraction
-      - name: Build and test sample configurations
+      - name: Compile components to Cython
+        run: cd code && python setup.py build_ext --inplace
+      - name: Test sample configurations
         run: ./.ci/run_sample_configurations.bash

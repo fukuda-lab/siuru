@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod, abstractstaticmethod
 from typing import List
 
 from common.features import IFeature, SampleGenerator
@@ -12,8 +12,7 @@ class IDataLoader(ABC):
     def __init__(self, **kwargs):
         pass
 
-    @staticmethod
-    @abstractmethod
+    @abstractstaticmethod
     def feature_signature() -> List[IFeature]:
         """
         Returns a list of features that the data loader promises

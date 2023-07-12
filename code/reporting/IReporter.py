@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod, abstractstaticmethod
 from typing import Dict, Any, List
 
 from common.features import IFeature
@@ -26,8 +26,7 @@ class IReporter(ABC):
         """
         pass
 
-    @staticmethod
-    @abstractmethod
+    @abstractstaticmethod
     def input_signature() -> List[IFeature]:
         """
         Returns a list of features that the reporter requires
