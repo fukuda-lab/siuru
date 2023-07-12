@@ -181,7 +181,19 @@
     "OUTPUT": [
         {
             "class": "DistanceReporter",
-            "kwargs": {}
+            "kwargs": {
+                "feature_list": [
+                    "host_rcv_pkt_count",
+                    "host_sum_rcv_pkt_size",
+                    "host_avg_rcv_pkt_size",
+                    "host_sent_pkt_count",
+                    "host_sum_sent_pkt_size",
+                    "host_avg_sent_pkt_size",
+                    "host_inter_arrival_last",
+                    "host_inter_arrival_avg",
+                    "host_conn_timedelta"
+                ]
+            }
         }
     ],
     "LOG": [

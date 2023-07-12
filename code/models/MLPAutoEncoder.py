@@ -115,14 +115,14 @@ class MLPAutoEncoderModel(IAnomalyDetectionModel):
                 # Handle the prediction for multi-sample encoding.
                 for i, sample in enumerate(sample):
                     sample[PredictionField.MODEL_NAME] = self.model_name
-                    sample[PredictionField.OUTPUT_DISTANCE] = sum(abs(prediction[i]))
+                    sample[PredictionField.OUTPUT_DISTANCE] = prediction[i]
                     sum_processing_time += time.process_time_ns() - start_time_ref
                     sum_samples += 1
                     yield sample
 
             else:
                 sample[PredictionField.MODEL_NAME] = self.model_name
-                sample[PredictionField.OUTPUT_DISTANCE] = sum(prediction[0])
+                sample[PredictionField.OUTPUT_DISTANCE] = prediction[0]
                 sum_processing_time += time.process_time_ns() - start_time_ref
                 sum_samples += 1
                 yield sample

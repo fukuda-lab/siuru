@@ -181,16 +181,21 @@
                     "window_flow_sum_pkt_size",
                     "window_flow_avg_pkt_size",
                     "window_flow_inter_arrival_avg"
-                ],
-                "max_time_window_ms": 100,
-                "max_array_size": 1000
+                ]
             }
         }
     },
     "OUTPUT": [
         {
             "class": "DistanceReporter",
-            "kwargs": {}
+            "kwargs": {
+                "feature_list": [
+                    "window_flow_pkt_count",
+                    "window_flow_sum_pkt_size",
+                    "window_flow_avg_pkt_size",
+                    "window_flow_inter_arrival_avg"
+                ]
+            }
         }
     ],
     "LOG": [

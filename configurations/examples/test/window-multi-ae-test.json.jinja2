@@ -190,7 +190,14 @@
     "OUTPUT": [
         {
             "class": "DistanceReporter",
-            "kwargs": {}
+            "kwargs": {
+                "feature_list": [
+                    "window_flow_pkt_count",
+                    "window_flow_sum_pkt_size",
+                    "window_flow_avg_pkt_size",
+                    "window_flow_inter_arrival_avg"
+                ]
+            }
         }
     ],
     "LOG": [

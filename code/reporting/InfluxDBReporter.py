@@ -86,7 +86,7 @@ class InfluxDBReporter(IReporter):
         elif is_autoencoder_distance:
             p.field(
                 PredictionField.OUTPUT_DISTANCE.value,
-                features[PredictionField.OUTPUT_DISTANCE],
+                sum(abs(features[PredictionField.OUTPUT_DISTANCE])),
             )
         else:
             raise NotImplementedError(

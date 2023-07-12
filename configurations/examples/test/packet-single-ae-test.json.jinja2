@@ -160,7 +160,22 @@
     "OUTPUT": [
         {
             "class": "DistanceReporter",
-            "kwargs": {}
+            "kwargs": {
+                "feature_list": [
+                    "ip_header_size",
+                    "ip_data_size",
+                    "tcp_header_size",
+                    "tcp_size",
+                    "tcp_cwr",
+                    "tcp_ece",
+                    "tcp_urg",
+                    "tcp_ack",
+                    "tcp_psh",
+                    "tcp_rst",
+                    "tcp_syn",
+                    "tcp_fin"
+                ]
+            }
         }
     ],
     "LOG": [
