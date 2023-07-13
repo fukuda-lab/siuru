@@ -94,13 +94,18 @@ class RandomForestModel(IAnomalyDetectionModel):
         for sample, encoded_sample in data:
             start_time_ref = time.process_time_ns()
             prediction = self.model_instance.predict(encoded_sample)
+
             if isinstance(sample, list):
+                sum_processing_time += time.process_time_ns() - start_time_ref
+                # Handle the prediction for multi-sample encoding.
                 for i, sample in enumerate(sample):
+                    start_time_ref = time.process_time_ns()
                     sample[PredictionField.MODEL_NAME] = self.model_name
                     sample[PredictionField.OUTPUT_BINARY] = prediction[i]
                     sum_processing_time += time.process_time_ns() - start_time_ref
                     sum_samples += 1
                     yield sample
+
             else:
                 sample[PredictionField.MODEL_NAME] = self.model_name
                 sample[PredictionField.OUTPUT_BINARY] = prediction[0]
