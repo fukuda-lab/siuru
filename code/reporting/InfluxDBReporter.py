@@ -1,11 +1,12 @@
 import time
 from typing import Dict, Any, Optional
+from datetime import datetime
 
 import influxdb_client
 from influxdb_client import Point
 from influxdb_client.client.exceptions import InfluxDBError
 
-from common.features import PacketFeature, IFeature, PredictionField
+from common.features import PacketFeature, IFeature, PredictionField, FlowFeature
 
 from common import pipeline_logger
 from common.functions import report_performance
@@ -94,16 +95,28 @@ class InfluxDBReporter(IReporter):
                 "output distance field must be set by the model!"
             )
 
-        # Save packet timestamp as a field -- InfluxDB timestamp will be creation time.
+        # Save packet timestamp as a field
         p.field("packet_timestamp", features[PacketFeature.TIMESTAMP])
+      
+        # Tags IP
+        p.tag("ip_src_addr", features[PacketFeature.IP_SOURCE_ADDRESS])
+        p.tag("ip_dst_addr", features[PacketFeature.IP_DESTINATION_ADDRESS])
+        p.tag("ip_src_port", features[PacketFeature.IP_SOURCE_PORT])
+        p.tag("ip_dst_port", features[PacketFeature.IP_DESTINATION_PORT]) 
+        
+        # Fields IP
+        p.field("ip_header_size", features[PacketFeature.IP_HEADER_SIZE])
+        p.field("ip_data_size", features[PacketFeature.IP_DATA_SIZE])
+        p.field("tcp_header_size", features[PacketFeature.TCP_HEADER_SIZE])
+        p.field("tcp_data_size", features[PacketFeature.TCP_DATA_SIZE])
+        
+        # Window fields
+        p.field("window_avg_pkt_size", features[FlowFeature.WINDOW_AVG_PACKET_SIZE])
+        p.field("window_inter_arrival_avg", features[FlowFeature.WINDOW_AVG_INTER_ARRIVAL_TIME])
+        p.field("window_pkt_count", features[FlowFeature.WINDOW_RECEIVED_PACKET_COUNT])
+        p.field("window_sum_pkt_size", features[FlowFeature.WINDOW_SUM_PACKET_SIZE])
 
-        # TODO Decide on relevant tags, or leave them configurable.
-        # p.time(features[PacketFeature.TIMESTAMP].isoformat(timespec="nanoseconds"))
-        # p.tag(PacketFeature.IP_SOURCE_ADDRESS.value, features[PacketFeature.IP_SOURCE_ADDRESS])
-        # p.tag(PacketFeature.IP_SOURCE_PORT.value, features[PacketFeature.IP_SOURCE_PORT])
-        # p.tag(PacketFeature.IP_DESTINATION_ADDRESS.value, features[PacketFeature.IP_DESTINATION_ADDRESS])
-        # p.tag(PacketFeature.IP_DESTINATION_PORT.value, features[PacketFeature.IP_DESTINATION_PORT])
-        # p.tag(PacketFeature.PROTOCOL.value, features[PacketFeature.PROTOCOL])
+        p.time(datetime.utcnow())
 
         self.write_api.write(bucket=self.bucket, org=self.org, record=p)
         self.sum_processing_time += time.process_time_ns() - start_time_ref
